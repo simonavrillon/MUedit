@@ -5,7 +5,7 @@ We provide a step-by-step protocol (User_manual.pdf) to facilitate the implement
 
 You can download the data presented in the paper at https://figshare.com/projects/Data_for_MUedit/172314
 
-A version of the decomposition algorithm coded with Python (Python 3.9.15) is available at https://github.com/ciaragibbs/MUEdit_Python
+A version of the decomposition algorithm coded with Python (Python 3.9.15) by Ciara Gibbs (ciara.gibbs18@imperial.ac.uk) is available at https://github.com/ciaragibbs/MUEdit_Python
 
 # Citation and technical support:
 

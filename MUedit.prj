@@ -1,5 +1,5 @@
 <deployment-project plugin="plugin.apptool" plugin-version="1.0">
-  <configuration build-checksum="1064137086" file="/Users/savrillo/Documents/Code/MUedit/MUedit.prj" location="/Users/savrillo/Documents/Code/MUedit" name="MUedit" target="target.mlapps" target-name="Package App">
+  <configuration build-checksum="855016362" file="/Users/savrillo/Documents/Code/MUedit/MUedit.prj" location="/Users/savrillo/Documents/Code/MUedit" name="MUedit" target="target.mlapps" target-name="Package App">
     <param.appname>MUedit</param.appname>
     <param.authnamewatermark>Simon Avrillon</param.authnamewatermark>
     <param.email>s.avrillon@imperial.ac.uk</param.email>
@@ -12,7 +12,7 @@
     </param.icons>
     <param.summary>App to decompose electromyographic signals and manually edit motor unit pulse trains.</param.summary>
     <param.description />
-    <param.screenshot>/private/var/folders/g4/827tkn3d5t7chp02b0wrxhvm0000gp/T/tpd8aaa5b6_d6b4_4447_8bfd_cbfe552df9f7.png</param.screenshot>
+    <param.screenshot>/private/var/folders/g4/827tkn3d5t7chp02b0wrxhvm0000gp/T/tpc1d95323_7474_4852_a013_57bb84e22efa.png</param.screenshot>
     <param.version>1.0</param.version>
     <param.products.name>
       <item>MATLAB</item>
@@ -103,7 +103,7 @@
       <vista>false</vista>
       <linux>false</linux>
       <solaris>false</solaris>
-      <osver>13.3.1</osver>
+      <osver>13.4</osver>
       <os32>false</os32>
       <os64>true</os64>
       <arch>maci64</arch>

@@ -3,10 +3,6 @@ classdef MUedit_exported < matlab.apps.AppBase
     % Properties that correspond to app components
     properties (Access = public)
         UIFigure                       matlab.ui.Figure
-        VisualisationPanel             matlab.ui.container.Panel
-        EditField                      matlab.ui.control.EditField
-        UIAxes_Decomp_2                matlab.ui.control.UIAxes
-        UIAxes_Decomp_1                matlab.ui.control.UIAxes
         DecompositionSettingsPanel     matlab.ui.container.Panel
         ContrastfunctionDropDown       matlab.ui.control.DropDown
         ContrastfunctionLabel          matlab.ui.control.Label
@@ -20,8 +16,8 @@ classdef MUedit_exported < matlab.apps.AppBase
         ThresholdtargetEditFieldLabel  matlab.ui.control.Label
         RefineMUsDropDown              matlab.ui.control.DropDown
         RefineMUsDropDownLabel         matlab.ui.control.Label
-        InitializationDropDown         matlab.ui.control.DropDown
-        InitializationDropDownLabel    matlab.ui.control.Label
+        InitialisationDropDown         matlab.ui.control.DropDown
+        InitialisationDropDownLabel    matlab.ui.control.Label
         CoVfilterDropDown              matlab.ui.control.DropDown
         CoVfilterDropDownLabel         matlab.ui.control.Label
         NumberofwindowsEditField       matlab.ui.control.NumericEditField
@@ -33,7 +29,7 @@ classdef MUedit_exported < matlab.apps.AppBase
         ReferenceDropDown              matlab.ui.control.DropDown
         ReferenceDropDownLabel         matlab.ui.control.Label
         NbofextendedchannelsEditField  matlab.ui.control.NumericEditField
-        NbofextendedchannelsEditFieldLabel  matlab.ui.control.Label
+        NbofextendedchannelsLabel      matlab.ui.control.Label
         SelectfileButton               matlab.ui.control.Button
         EditField_saving_3             matlab.ui.control.EditField
         NumberofiterationsEditField_2  matlab.ui.control.NumericEditField
@@ -41,21 +37,10 @@ classdef MUedit_exported < matlab.apps.AppBase
         SILthresholdEditField          matlab.ui.control.NumericEditField
         SILthresholdEditFieldLabel     matlab.ui.control.Label
         StartButton                    matlab.ui.control.Button
-        EditionPanel                   matlab.ui.container.Panel
-        RemoveduplicatesbetweengridsButton  matlab.ui.control.Button
-        RemoveduplicateswithingridsButton  matlab.ui.control.Button
-        PlotMUfiringratesButton        matlab.ui.control.Button
-        SavetheeditionLabel            matlab.ui.control.Label
-        VisualisationLabel             matlab.ui.control.Label
-        BatchprocessingLabel           matlab.ui.control.Label
-        SaveButton                     matlab.ui.control.Button
-        PlotMUspiketrainsButton        matlab.ui.control.Button
-        RemoveflaggedMUButton          matlab.ui.control.Button
-        ReevaluateallMUfiltersButton   matlab.ui.control.Button
-        RemovealltheoutliersButton     matlab.ui.control.Button
-        ImportdataButton               matlab.ui.control.Button
-        SelectfileButton_2             matlab.ui.control.Button
-        EditField_saving_2             matlab.ui.control.EditField
+        VisualisationPanel             matlab.ui.container.Panel
+        EditField                      matlab.ui.control.EditField
+        UIAxes_Decomp_2                matlab.ui.control.UIAxes
+        UIAxes_Decomp_1                matlab.ui.control.UIAxes
         ManualeditionPanel             matlab.ui.container.Panel
         LockspikesButton               matlab.ui.control.Button
         UndoButton                     matlab.ui.control.Button
@@ -75,6 +60,21 @@ classdef MUedit_exported < matlab.apps.AppBase
         MUdisplayedDropDown            matlab.ui.control.DropDown
         UIAxesDR                       matlab.ui.control.UIAxes
         UIAxesSpiketrain               matlab.ui.control.UIAxes
+        EditionPanel                   matlab.ui.container.Panel
+        RemoveduplicatesbetweengridsButton  matlab.ui.control.Button
+        RemoveduplicateswithingridsButton  matlab.ui.control.Button
+        PlotMUfiringratesButton        matlab.ui.control.Button
+        SavetheeditionLabel            matlab.ui.control.Label
+        VisualisationLabel             matlab.ui.control.Label
+        BatchprocessingLabel           matlab.ui.control.Label
+        SaveButton                     matlab.ui.control.Button
+        PlotMUspiketrainsButton        matlab.ui.control.Button
+        RemoveflaggedMUButton          matlab.ui.control.Button
+        ReevaluateallMUfiltersButton   matlab.ui.control.Button
+        RemovealltheoutliersButton     matlab.ui.control.Button
+        ImportdataButton               matlab.ui.control.Button
+        SelectfileButton_2             matlab.ui.control.Button
+        EditField_saving_2             matlab.ui.control.EditField
         TabGroup                       matlab.ui.container.TabGroup
         DecompositionTab               matlab.ui.container.Tab
         EditionTab                     matlab.ui.container.Tab
@@ -166,7 +166,7 @@ classdef MUedit_exported < matlab.apps.AppBase
             end
 
             % (realign the discharge time with the peak of the MUAP (channel with the MUAP with the highest p2p amplitude from double diff EMG signal)
-            if isequal(app.InitializationDropDown.Value, 'EMG max')
+            if isequal(app.InitialisationDropDown.Value, 'EMG max')
                 parameters.initialization = 1;
             else
                 parameters.initialization = 0;
@@ -324,8 +324,7 @@ classdef MUedit_exported < matlab.apps.AppBase
                     [~, idx1(j)] = max(actind);
                     signalprocess.w = signalprocess.X(:, idx1(j)); % Initialize w
                 else
-                    temp = randn(size(signalprocess.X,1));
-                    signalprocess.w = temp(:, 1); % Initialize w
+                    signalprocess.w = randn(size(signalprocess.X,1),1); % Initialize w
                 end
                 time = linspace(0,size(signalprocess.X,2)/signal.fsamp,size(signalprocess.X,2));
             else
@@ -334,8 +333,7 @@ classdef MUedit_exported < matlab.apps.AppBase
                     [~, idx1(j)] = max(actind);
                     signalprocess.w = signalprocess.X(:, idx1(j)); % Initialize w
                 else
-                    temp = randn(size(signalprocess.X,1));
-                    signalprocess.w = temp(:, 1); % Initialize w
+                    signalprocess.w = randn(size(signalprocess.X,1),1); % Initialize w
                 end
             end
             
@@ -420,6 +418,7 @@ classdef MUedit_exported < matlab.apps.AppBase
                     signal.Dischargetimes{i,j} = distimenew{j};
                 end
             end
+            
             close(f);
             end
 
@@ -428,7 +427,7 @@ classdef MUedit_exported < matlab.apps.AppBase
             app.EditField.Value = 'Saving data';
             % Save file
             clearvars signalprocess i j PulseT distime distimenew actind idx1 time ISI CoV maxiter nwin Wini temp
-            savename = [app.pathname app.filename '_Training_' num2str(parameters.intensity) '.mat'];
+            savename = [app.pathname app.filename '_decomp.mat'];
             save(savename, 'signal', 'parameters');
             app.EditField.Value = 'Data saved';
             app.StartButton.BackgroundColor = [0.5 0.5 0.5];
@@ -1395,15 +1394,50 @@ classdef MUedit_exported < matlab.apps.AppBase
                 title(['Grid#' num2str(i) ' with ' num2str(j) ' MUs'], 'Color', [0.9412 0.9412 0.9412], 'FontName', 'Avenir Next')
                 xlabel('Time (s)', 'FontName', 'Avenir Next')
                 ylabel('Smoothed discharge rates', 'FontName', 'Avenir Next')
-                set(gcf,'Color', [0.5 0.5 0.5]);
+                set(gcf,'Color', [0.15 0.15 0.15]);
                 set(gcf,'units','normalized','outerposition',[0 0 1 1])
-                set(gca,'Color', [0.5 0.5 0.5], 'XColor', [0.9412 0.9412 0.9412], 'YColor', [0.9412 0.9412 0.9412]);
+                set(gca,'Color', [0.15 0.15 0.15], 'XColor', [0.9412 0.9412 0.9412], 'YColor', [0.9412 0.9412 0.9412]);
             end
             sgtitle(['Smoothed discharge rates for ' num2str(i) ' grids'], 'FontName', 'Avenir Next', 'FontSize', 25, 'Color', [0.9412 0.9412 0.9412])
         end
 
         % Button pushed function: SaveButton
         function SaveButtonPushed(app, event)
+            fwb = waitbar(0, 'Checking flagged units');
+            ite = 0;
+            itetot = 0;
+            for f = 1:size(app.MUedition.edition.Pulsetrain,2)
+                itetot = itetot + size(app.MUedition.edition.Pulsetrain{f},1);
+            end
+
+            for i = 1:size(app.MUedition.edition.Pulsetrain,2)
+                app.MUedition.edition.Pulsetrainclean{i} = app.MUedition.edition.Pulsetrain{i};
+                app.MUedition.edition.Distimeclean{i} = {};
+                for j = 1:size(app.MUedition.edition.Pulsetrain{i},1)
+                    app.MUedition.edition.Distimeclean{i}{j} = app.MUedition.edition.Dischargetimes{i,j};
+                end
+                for j = 1:size(app.MUedition.edition.Pulsetrain{i},1)
+                    idx = size(app.MUedition.edition.Pulsetrain{i},1)+1-j;
+                    if length(app.MUedition.edition.Dischargetimes{i,idx}) == 2 && mean(app.MUedition.edition.Pulsetrain{i}(idx,:)) == 0
+                        app.MUedition.edition.Distimeclean{i}{idx} = [];
+                        app.MUedition.edition.Pulsetrainclean{i}(idx,:) = [];
+                    end
+                    ite = ite + 1;
+                    waitbar(ite/itetot, fwb,['Checking flagged units for Grid#' num2str(i) ' _MU#' num2str(j)])
+                end
+                app.MUedition.edition.Distimeclean{i} = app.MUedition.edition.Distimeclean{i}(~cellfun('isempty',app.MUedition.edition.Distimeclean{i}));
+            end
+
+            app.MUedition.edition.Dischargetimes = {};
+            for i = 1:size(app.MUedition.edition.Pulsetrain,2)
+                app.MUedition.edition.Pulsetrain{i} = app.MUedition.edition.Pulsetrainclean{i};
+                for j = 1:size(app.MUedition.edition.Pulsetrain{i},1)
+                    app.MUedition.edition.Dischargetimes{i,j} = app.MUedition.edition.Distimeclean{i}{j};
+                end
+            end
+            
+            delete(fwb)
+
             if contains(app.filename2,'edited')
                 savename = [app.pathname2 app.filename2];
             else
@@ -1445,6 +1479,167 @@ classdef MUedit_exported < matlab.apps.AppBase
             app.EditionTab.BackgroundColor = [0.149 0.149 0.149];
             app.EditionTab.ForegroundColor = [0.502 0.502 0.502];
             app.EditionTab.ButtonDownFcn = createCallbackFcn(app, @EditionTabButtonDown, true);
+
+            % Create EditionPanel
+            app.EditionPanel = uipanel(app.UIFigure);
+            app.EditionPanel.ForegroundColor = [0.9412 0.9412 0.9412];
+            app.EditionPanel.Title = 'Edition';
+            app.EditionPanel.BackgroundColor = [0.149 0.149 0.149];
+            app.EditionPanel.FontName = 'Avenir Next';
+            app.EditionPanel.FontWeight = 'bold';
+            app.EditionPanel.FontSize = 14;
+            app.EditionPanel.Position = [2 1 225 665];
+
+            % Create EditField_saving_2
+            app.EditField_saving_2 = uieditfield(app.EditionPanel, 'text');
+            app.EditField_saving_2.Editable = 'off';
+            app.EditField_saving_2.FontName = 'Avenir Next';
+            app.EditField_saving_2.FontSize = 14;
+            app.EditField_saving_2.FontColor = [0.8118 0.502 1];
+            app.EditField_saving_2.BackgroundColor = [0.149 0.149 0.149];
+            app.EditField_saving_2.Position = [7 598 94 34];
+            app.EditField_saving_2.Value = 'File name';
+
+            % Create SelectfileButton_2
+            app.SelectfileButton_2 = uibutton(app.EditionPanel, 'push');
+            app.SelectfileButton_2.ButtonPushedFcn = createCallbackFcn(app, @SelectfileButton_2Pushed, true);
+            app.SelectfileButton_2.BackgroundColor = [0.149 0.149 0.149];
+            app.SelectfileButton_2.FontName = 'Avenir Next';
+            app.SelectfileButton_2.FontSize = 14;
+            app.SelectfileButton_2.FontWeight = 'bold';
+            app.SelectfileButton_2.FontColor = [0.8118 0.502 1];
+            app.SelectfileButton_2.Position = [114 598 101 34];
+            app.SelectfileButton_2.Text = 'Select file';
+
+            % Create ImportdataButton
+            app.ImportdataButton = uibutton(app.EditionPanel, 'push');
+            app.ImportdataButton.ButtonPushedFcn = createCallbackFcn(app, @ImportdataButtonPushed, true);
+            app.ImportdataButton.BackgroundColor = [0.149 0.149 0.149];
+            app.ImportdataButton.FontName = 'Avenir Next';
+            app.ImportdataButton.FontSize = 14;
+            app.ImportdataButton.FontWeight = 'bold';
+            app.ImportdataButton.FontColor = [0.8118 0.502 1];
+            app.ImportdataButton.Position = [8 556 207 34];
+            app.ImportdataButton.Text = 'Import data';
+
+            % Create RemovealltheoutliersButton
+            app.RemovealltheoutliersButton = uibutton(app.EditionPanel, 'push');
+            app.RemovealltheoutliersButton.ButtonPushedFcn = createCallbackFcn(app, @RemovealltheoutliersButtonPushed, true);
+            app.RemovealltheoutliersButton.BackgroundColor = [0.149 0.149 0.149];
+            app.RemovealltheoutliersButton.FontName = 'Avenir Next';
+            app.RemovealltheoutliersButton.FontSize = 14;
+            app.RemovealltheoutliersButton.FontWeight = 'bold';
+            app.RemovealltheoutliersButton.FontColor = [0.5608 0.6196 0.851];
+            app.RemovealltheoutliersButton.Position = [8 474 207 34];
+            app.RemovealltheoutliersButton.Text = '1 - Remove all the outliers';
+
+            % Create ReevaluateallMUfiltersButton
+            app.ReevaluateallMUfiltersButton = uibutton(app.EditionPanel, 'push');
+            app.ReevaluateallMUfiltersButton.ButtonPushedFcn = createCallbackFcn(app, @ReevaluateallMUfiltersButtonPushed, true);
+            app.ReevaluateallMUfiltersButton.BackgroundColor = [0.149 0.149 0.149];
+            app.ReevaluateallMUfiltersButton.FontName = 'Avenir Next';
+            app.ReevaluateallMUfiltersButton.FontSize = 14;
+            app.ReevaluateallMUfiltersButton.FontWeight = 'bold';
+            app.ReevaluateallMUfiltersButton.FontColor = [0.5608 0.6196 0.851];
+            app.ReevaluateallMUfiltersButton.Position = [8 430 207 34];
+            app.ReevaluateallMUfiltersButton.Text = '2 - Re-evaluate all MU filters';
+
+            % Create RemoveflaggedMUButton
+            app.RemoveflaggedMUButton = uibutton(app.EditionPanel, 'push');
+            app.RemoveflaggedMUButton.ButtonPushedFcn = createCallbackFcn(app, @RemoveflaggedMUButtonPushed, true);
+            app.RemoveflaggedMUButton.WordWrap = 'on';
+            app.RemoveflaggedMUButton.BackgroundColor = [0.149 0.149 0.149];
+            app.RemoveflaggedMUButton.FontName = 'Avenir Next';
+            app.RemoveflaggedMUButton.FontSize = 14;
+            app.RemoveflaggedMUButton.FontWeight = 'bold';
+            app.RemoveflaggedMUButton.FontColor = [0.5608 0.6196 0.851];
+            app.RemoveflaggedMUButton.Position = [8 386 207 34];
+            app.RemoveflaggedMUButton.Text = '3 - Remove flagged MU';
+
+            % Create PlotMUspiketrainsButton
+            app.PlotMUspiketrainsButton = uibutton(app.EditionPanel, 'push');
+            app.PlotMUspiketrainsButton.ButtonPushedFcn = createCallbackFcn(app, @PlotMUspiketrainsButtonPushed, true);
+            app.PlotMUspiketrainsButton.BackgroundColor = [0.149 0.149 0.149];
+            app.PlotMUspiketrainsButton.FontName = 'Avenir Next';
+            app.PlotMUspiketrainsButton.FontSize = 14;
+            app.PlotMUspiketrainsButton.FontWeight = 'bold';
+            app.PlotMUspiketrainsButton.FontColor = [0.3804 0.7804 0.749];
+            app.PlotMUspiketrainsButton.Position = [8 184 207 34];
+            app.PlotMUspiketrainsButton.Text = 'Plot MU spike trains';
+
+            % Create SaveButton
+            app.SaveButton = uibutton(app.EditionPanel, 'push');
+            app.SaveButton.ButtonPushedFcn = createCallbackFcn(app, @SaveButtonPushed, true);
+            app.SaveButton.BackgroundColor = [0.149 0.149 0.149];
+            app.SaveButton.FontName = 'Avenir Next';
+            app.SaveButton.FontSize = 14;
+            app.SaveButton.FontWeight = 'bold';
+            app.SaveButton.FontColor = [0.9412 0.9412 0.9412];
+            app.SaveButton.Position = [8 41 207 34];
+            app.SaveButton.Text = 'Save';
+
+            % Create BatchprocessingLabel
+            app.BatchprocessingLabel = uilabel(app.EditionPanel);
+            app.BatchprocessingLabel.HorizontalAlignment = 'center';
+            app.BatchprocessingLabel.FontName = 'Avenir Next';
+            app.BatchprocessingLabel.FontSize = 14;
+            app.BatchprocessingLabel.FontColor = [0.9412 0.9412 0.9412];
+            app.BatchprocessingLabel.Position = [54 511 115 22];
+            app.BatchprocessingLabel.Text = 'Batch processing';
+
+            % Create VisualisationLabel
+            app.VisualisationLabel = uilabel(app.EditionPanel);
+            app.VisualisationLabel.HorizontalAlignment = 'center';
+            app.VisualisationLabel.FontName = 'Avenir Next';
+            app.VisualisationLabel.FontSize = 14;
+            app.VisualisationLabel.FontColor = [0.9412 0.9412 0.9412];
+            app.VisualisationLabel.Position = [70 223 84 22];
+            app.VisualisationLabel.Text = 'Visualisation';
+
+            % Create SavetheeditionLabel
+            app.SavetheeditionLabel = uilabel(app.EditionPanel);
+            app.SavetheeditionLabel.HorizontalAlignment = 'center';
+            app.SavetheeditionLabel.WordWrap = 'on';
+            app.SavetheeditionLabel.FontName = 'Avenir Next';
+            app.SavetheeditionLabel.FontSize = 14;
+            app.SavetheeditionLabel.FontColor = [0.9412 0.9412 0.9412];
+            app.SavetheeditionLabel.Position = [12 81 199 22];
+            app.SavetheeditionLabel.Text = 'Save the edition';
+
+            % Create PlotMUfiringratesButton
+            app.PlotMUfiringratesButton = uibutton(app.EditionPanel, 'push');
+            app.PlotMUfiringratesButton.ButtonPushedFcn = createCallbackFcn(app, @PlotMUfiringratesButtonPushed, true);
+            app.PlotMUfiringratesButton.BackgroundColor = [0.149 0.149 0.149];
+            app.PlotMUfiringratesButton.FontName = 'Avenir Next';
+            app.PlotMUfiringratesButton.FontSize = 14;
+            app.PlotMUfiringratesButton.FontWeight = 'bold';
+            app.PlotMUfiringratesButton.FontColor = [0.3804 0.7804 0.749];
+            app.PlotMUfiringratesButton.Position = [8 139 207 34];
+            app.PlotMUfiringratesButton.Text = 'Plot MU firing rates';
+
+            % Create RemoveduplicateswithingridsButton
+            app.RemoveduplicateswithingridsButton = uibutton(app.EditionPanel, 'push');
+            app.RemoveduplicateswithingridsButton.ButtonPushedFcn = createCallbackFcn(app, @RemoveduplicateswithingridsButtonPushed, true);
+            app.RemoveduplicateswithingridsButton.WordWrap = 'on';
+            app.RemoveduplicateswithingridsButton.BackgroundColor = [0.149 0.149 0.149];
+            app.RemoveduplicateswithingridsButton.FontName = 'Avenir Next';
+            app.RemoveduplicateswithingridsButton.FontSize = 14;
+            app.RemoveduplicateswithingridsButton.FontWeight = 'bold';
+            app.RemoveduplicateswithingridsButton.FontColor = [0.5608 0.6196 0.851];
+            app.RemoveduplicateswithingridsButton.Position = [8 333 207 43];
+            app.RemoveduplicateswithingridsButton.Text = '4 - Remove duplicates within grids';
+
+            % Create RemoveduplicatesbetweengridsButton
+            app.RemoveduplicatesbetweengridsButton = uibutton(app.EditionPanel, 'push');
+            app.RemoveduplicatesbetweengridsButton.ButtonPushedFcn = createCallbackFcn(app, @RemoveduplicatesbetweengridsButtonPushed, true);
+            app.RemoveduplicatesbetweengridsButton.WordWrap = 'on';
+            app.RemoveduplicatesbetweengridsButton.BackgroundColor = [0.149 0.149 0.149];
+            app.RemoveduplicatesbetweengridsButton.FontName = 'Avenir Next';
+            app.RemoveduplicatesbetweengridsButton.FontSize = 14;
+            app.RemoveduplicatesbetweengridsButton.FontWeight = 'bold';
+            app.RemoveduplicatesbetweengridsButton.FontColor = [0.5608 0.6196 0.851];
+            app.RemoveduplicatesbetweengridsButton.Position = [8 280 207 43];
+            app.RemoveduplicatesbetweengridsButton.Text = '5 - Remove duplicates between grids';
 
             % Create ManualeditionPanel
             app.ManualeditionPanel = uipanel(app.UIFigure);
@@ -1615,7 +1810,7 @@ classdef MUedit_exported < matlab.apps.AppBase
             app.ReevaluatewithwhiteningButton.FontWeight = 'bold';
             app.ReevaluatewithwhiteningButton.FontColor = [0.9412 0.9412 0.9412];
             app.ReevaluatewithwhiteningButton.Position = [698 362 220 34];
-            app.ReevaluatewithwhiteningButton.Text = 'Reevaluate with whitening';
+            app.ReevaluatewithwhiteningButton.Text = 'Re-evaluate with whitening';
 
             % Create ReevaluatewithoutwhiteningButton
             app.ReevaluatewithoutwhiteningButton = uibutton(app.ManualeditionPanel, 'push');
@@ -1625,8 +1820,8 @@ classdef MUedit_exported < matlab.apps.AppBase
             app.ReevaluatewithoutwhiteningButton.FontSize = 14;
             app.ReevaluatewithoutwhiteningButton.FontWeight = 'bold';
             app.ReevaluatewithoutwhiteningButton.FontColor = [0.9412 0.9412 0.9412];
-            app.ReevaluatewithoutwhiteningButton.Position = [472 362 220 34];
-            app.ReevaluatewithoutwhiteningButton.Text = 'Reevaluate without whitening';
+            app.ReevaluatewithoutwhiteningButton.Position = [469 362 227 34];
+            app.ReevaluatewithoutwhiteningButton.Text = 'Re-evaluate without whitening';
 
             % Create EditField_2
             app.EditField_2 = uieditfield(app.ManualeditionPanel, 'text');
@@ -1658,166 +1853,58 @@ classdef MUedit_exported < matlab.apps.AppBase
             app.LockspikesButton.Position = [356 362 110 34];
             app.LockspikesButton.Text = 'Lock spikes';
 
-            % Create EditionPanel
-            app.EditionPanel = uipanel(app.UIFigure);
-            app.EditionPanel.ForegroundColor = [0.9412 0.9412 0.9412];
-            app.EditionPanel.Title = 'Edition';
-            app.EditionPanel.BackgroundColor = [0.149 0.149 0.149];
-            app.EditionPanel.FontName = 'Avenir Next';
-            app.EditionPanel.FontWeight = 'bold';
-            app.EditionPanel.FontSize = 14;
-            app.EditionPanel.Position = [2 1 225 665];
+            % Create VisualisationPanel
+            app.VisualisationPanel = uipanel(app.UIFigure);
+            app.VisualisationPanel.ForegroundColor = [0.9412 0.9412 0.9412];
+            app.VisualisationPanel.Title = 'Visualisation';
+            app.VisualisationPanel.BackgroundColor = [0.149 0.149 0.149];
+            app.VisualisationPanel.FontName = 'Avenir Next';
+            app.VisualisationPanel.FontWeight = 'bold';
+            app.VisualisationPanel.FontSize = 14;
+            app.VisualisationPanel.Position = [224 1 919 691];
 
-            % Create EditField_saving_2
-            app.EditField_saving_2 = uieditfield(app.EditionPanel, 'text');
-            app.EditField_saving_2.Editable = 'off';
-            app.EditField_saving_2.FontName = 'Avenir Next';
-            app.EditField_saving_2.FontSize = 14;
-            app.EditField_saving_2.FontColor = [0.8118 0.502 1];
-            app.EditField_saving_2.BackgroundColor = [0.149 0.149 0.149];
-            app.EditField_saving_2.Position = [7 598 94 34];
-            app.EditField_saving_2.Value = 'File name';
+            % Create UIAxes_Decomp_1
+            app.UIAxes_Decomp_1 = uiaxes(app.VisualisationPanel);
+            xlabel(app.UIAxes_Decomp_1, 'Time (s)')
+            ylabel(app.UIAxes_Decomp_1, 'Pulse train')
+            zlabel(app.UIAxes_Decomp_1, 'Z')
+            app.UIAxes_Decomp_1.Toolbar.Visible = 'off';
+            app.UIAxes_Decomp_1.FontName = 'Avenir Next';
+            app.UIAxes_Decomp_1.Color = 'none';
+            app.UIAxes_Decomp_1.FontSize = 14;
+            app.UIAxes_Decomp_1.GridColor = [1 1 1];
+            app.UIAxes_Decomp_1.MinorGridColor = [1 1 1];
+            app.UIAxes_Decomp_1.Interruptible = 'off';
+            app.UIAxes_Decomp_1.HitTest = 'off';
+            app.UIAxes_Decomp_1.PickableParts = 'none';
+            app.UIAxes_Decomp_1.Position = [2 2 916 342];
 
-            % Create SelectfileButton_2
-            app.SelectfileButton_2 = uibutton(app.EditionPanel, 'push');
-            app.SelectfileButton_2.ButtonPushedFcn = createCallbackFcn(app, @SelectfileButton_2Pushed, true);
-            app.SelectfileButton_2.BackgroundColor = [0.149 0.149 0.149];
-            app.SelectfileButton_2.FontName = 'Avenir Next';
-            app.SelectfileButton_2.FontSize = 14;
-            app.SelectfileButton_2.FontWeight = 'bold';
-            app.SelectfileButton_2.FontColor = [0.8118 0.502 1];
-            app.SelectfileButton_2.Position = [114 598 101 34];
-            app.SelectfileButton_2.Text = 'Select file';
+            % Create UIAxes_Decomp_2
+            app.UIAxes_Decomp_2 = uiaxes(app.VisualisationPanel);
+            xlabel(app.UIAxes_Decomp_2, 'Time (s)')
+            ylabel(app.UIAxes_Decomp_2, 'Reference (Force or EMG amplitude)')
+            zlabel(app.UIAxes_Decomp_2, 'Z')
+            app.UIAxes_Decomp_2.Toolbar.Visible = 'off';
+            app.UIAxes_Decomp_2.FontName = 'Avenir Next';
+            app.UIAxes_Decomp_2.Color = 'none';
+            app.UIAxes_Decomp_2.FontSize = 14;
+            app.UIAxes_Decomp_2.GridColor = [0.15 0.15 0.15];
+            app.UIAxes_Decomp_2.MinorGridColor = [0 0 0];
+            app.UIAxes_Decomp_2.ButtonDownFcn = createCallbackFcn(app, @AddspikesButtonPushed, true);
+            app.UIAxes_Decomp_2.Interruptible = 'off';
+            app.UIAxes_Decomp_2.HitTest = 'off';
+            app.UIAxes_Decomp_2.PickableParts = 'none';
+            app.UIAxes_Decomp_2.Position = [1 350 914 285];
 
-            % Create ImportdataButton
-            app.ImportdataButton = uibutton(app.EditionPanel, 'push');
-            app.ImportdataButton.ButtonPushedFcn = createCallbackFcn(app, @ImportdataButtonPushed, true);
-            app.ImportdataButton.BackgroundColor = [0.149 0.149 0.149];
-            app.ImportdataButton.FontName = 'Avenir Next';
-            app.ImportdataButton.FontSize = 14;
-            app.ImportdataButton.FontWeight = 'bold';
-            app.ImportdataButton.FontColor = [0.8118 0.502 1];
-            app.ImportdataButton.Position = [8 556 207 34];
-            app.ImportdataButton.Text = 'Import data';
-
-            % Create RemovealltheoutliersButton
-            app.RemovealltheoutliersButton = uibutton(app.EditionPanel, 'push');
-            app.RemovealltheoutliersButton.ButtonPushedFcn = createCallbackFcn(app, @RemovealltheoutliersButtonPushed, true);
-            app.RemovealltheoutliersButton.BackgroundColor = [0.149 0.149 0.149];
-            app.RemovealltheoutliersButton.FontName = 'Avenir Next';
-            app.RemovealltheoutliersButton.FontSize = 14;
-            app.RemovealltheoutliersButton.FontWeight = 'bold';
-            app.RemovealltheoutliersButton.FontColor = [0.5608 0.6196 0.851];
-            app.RemovealltheoutliersButton.Position = [8 474 207 34];
-            app.RemovealltheoutliersButton.Text = '1 - Remove all the outliers';
-
-            % Create ReevaluateallMUfiltersButton
-            app.ReevaluateallMUfiltersButton = uibutton(app.EditionPanel, 'push');
-            app.ReevaluateallMUfiltersButton.ButtonPushedFcn = createCallbackFcn(app, @ReevaluateallMUfiltersButtonPushed, true);
-            app.ReevaluateallMUfiltersButton.BackgroundColor = [0.149 0.149 0.149];
-            app.ReevaluateallMUfiltersButton.FontName = 'Avenir Next';
-            app.ReevaluateallMUfiltersButton.FontSize = 14;
-            app.ReevaluateallMUfiltersButton.FontWeight = 'bold';
-            app.ReevaluateallMUfiltersButton.FontColor = [0.5608 0.6196 0.851];
-            app.ReevaluateallMUfiltersButton.Position = [8 430 207 34];
-            app.ReevaluateallMUfiltersButton.Text = '2 - Reevaluate all MU filters';
-
-            % Create RemoveflaggedMUButton
-            app.RemoveflaggedMUButton = uibutton(app.EditionPanel, 'push');
-            app.RemoveflaggedMUButton.ButtonPushedFcn = createCallbackFcn(app, @RemoveflaggedMUButtonPushed, true);
-            app.RemoveflaggedMUButton.WordWrap = 'on';
-            app.RemoveflaggedMUButton.BackgroundColor = [0.149 0.149 0.149];
-            app.RemoveflaggedMUButton.FontName = 'Avenir Next';
-            app.RemoveflaggedMUButton.FontSize = 14;
-            app.RemoveflaggedMUButton.FontWeight = 'bold';
-            app.RemoveflaggedMUButton.FontColor = [0.5608 0.6196 0.851];
-            app.RemoveflaggedMUButton.Position = [8 386 207 34];
-            app.RemoveflaggedMUButton.Text = '3 - Remove flagged MU';
-
-            % Create PlotMUspiketrainsButton
-            app.PlotMUspiketrainsButton = uibutton(app.EditionPanel, 'push');
-            app.PlotMUspiketrainsButton.ButtonPushedFcn = createCallbackFcn(app, @PlotMUspiketrainsButtonPushed, true);
-            app.PlotMUspiketrainsButton.BackgroundColor = [0.149 0.149 0.149];
-            app.PlotMUspiketrainsButton.FontName = 'Avenir Next';
-            app.PlotMUspiketrainsButton.FontSize = 14;
-            app.PlotMUspiketrainsButton.FontWeight = 'bold';
-            app.PlotMUspiketrainsButton.FontColor = [0.3804 0.7804 0.749];
-            app.PlotMUspiketrainsButton.Position = [8 184 207 34];
-            app.PlotMUspiketrainsButton.Text = 'Plot MU spike trains';
-
-            % Create SaveButton
-            app.SaveButton = uibutton(app.EditionPanel, 'push');
-            app.SaveButton.ButtonPushedFcn = createCallbackFcn(app, @SaveButtonPushed, true);
-            app.SaveButton.BackgroundColor = [0.149 0.149 0.149];
-            app.SaveButton.FontName = 'Avenir Next';
-            app.SaveButton.FontSize = 14;
-            app.SaveButton.FontWeight = 'bold';
-            app.SaveButton.FontColor = [0.9412 0.9412 0.9412];
-            app.SaveButton.Position = [8 41 207 34];
-            app.SaveButton.Text = 'Save';
-
-            % Create BatchprocessingLabel
-            app.BatchprocessingLabel = uilabel(app.EditionPanel);
-            app.BatchprocessingLabel.HorizontalAlignment = 'center';
-            app.BatchprocessingLabel.FontName = 'Avenir Next';
-            app.BatchprocessingLabel.FontSize = 14;
-            app.BatchprocessingLabel.FontColor = [0.9412 0.9412 0.9412];
-            app.BatchprocessingLabel.Position = [54 511 115 22];
-            app.BatchprocessingLabel.Text = 'Batch processing';
-
-            % Create VisualisationLabel
-            app.VisualisationLabel = uilabel(app.EditionPanel);
-            app.VisualisationLabel.HorizontalAlignment = 'center';
-            app.VisualisationLabel.FontName = 'Avenir Next';
-            app.VisualisationLabel.FontSize = 14;
-            app.VisualisationLabel.FontColor = [0.9412 0.9412 0.9412];
-            app.VisualisationLabel.Position = [70 223 84 22];
-            app.VisualisationLabel.Text = 'Visualisation';
-
-            % Create SavetheeditionLabel
-            app.SavetheeditionLabel = uilabel(app.EditionPanel);
-            app.SavetheeditionLabel.HorizontalAlignment = 'center';
-            app.SavetheeditionLabel.WordWrap = 'on';
-            app.SavetheeditionLabel.FontName = 'Avenir Next';
-            app.SavetheeditionLabel.FontSize = 14;
-            app.SavetheeditionLabel.FontColor = [0.9412 0.9412 0.9412];
-            app.SavetheeditionLabel.Position = [12 81 199 22];
-            app.SavetheeditionLabel.Text = 'Save the edition';
-
-            % Create PlotMUfiringratesButton
-            app.PlotMUfiringratesButton = uibutton(app.EditionPanel, 'push');
-            app.PlotMUfiringratesButton.ButtonPushedFcn = createCallbackFcn(app, @PlotMUfiringratesButtonPushed, true);
-            app.PlotMUfiringratesButton.BackgroundColor = [0.149 0.149 0.149];
-            app.PlotMUfiringratesButton.FontName = 'Avenir Next';
-            app.PlotMUfiringratesButton.FontSize = 14;
-            app.PlotMUfiringratesButton.FontWeight = 'bold';
-            app.PlotMUfiringratesButton.FontColor = [0.3804 0.7804 0.749];
-            app.PlotMUfiringratesButton.Position = [8 139 207 34];
-            app.PlotMUfiringratesButton.Text = 'Plot MU firing rates';
-
-            % Create RemoveduplicateswithingridsButton
-            app.RemoveduplicateswithingridsButton = uibutton(app.EditionPanel, 'push');
-            app.RemoveduplicateswithingridsButton.ButtonPushedFcn = createCallbackFcn(app, @RemoveduplicateswithingridsButtonPushed, true);
-            app.RemoveduplicateswithingridsButton.WordWrap = 'on';
-            app.RemoveduplicateswithingridsButton.BackgroundColor = [0.149 0.149 0.149];
-            app.RemoveduplicateswithingridsButton.FontName = 'Avenir Next';
-            app.RemoveduplicateswithingridsButton.FontSize = 14;
-            app.RemoveduplicateswithingridsButton.FontWeight = 'bold';
-            app.RemoveduplicateswithingridsButton.FontColor = [0.5608 0.6196 0.851];
-            app.RemoveduplicateswithingridsButton.Position = [8 333 207 43];
-            app.RemoveduplicateswithingridsButton.Text = '4 - Remove duplicates within grids';
-
-            % Create RemoveduplicatesbetweengridsButton
-            app.RemoveduplicatesbetweengridsButton = uibutton(app.EditionPanel, 'push');
-            app.RemoveduplicatesbetweengridsButton.ButtonPushedFcn = createCallbackFcn(app, @RemoveduplicatesbetweengridsButtonPushed, true);
-            app.RemoveduplicatesbetweengridsButton.WordWrap = 'on';
-            app.RemoveduplicatesbetweengridsButton.BackgroundColor = [0.149 0.149 0.149];
-            app.RemoveduplicatesbetweengridsButton.FontName = 'Avenir Next';
-            app.RemoveduplicatesbetweengridsButton.FontSize = 14;
-            app.RemoveduplicatesbetweengridsButton.FontWeight = 'bold';
-            app.RemoveduplicatesbetweengridsButton.FontColor = [0.5608 0.6196 0.851];
-            app.RemoveduplicatesbetweengridsButton.Position = [8 280 207 43];
-            app.RemoveduplicatesbetweengridsButton.Text = '5 - Remove duplicates between grids';
+            % Create EditField
+            app.EditField = uieditfield(app.VisualisationPanel, 'text');
+            app.EditField.HorizontalAlignment = 'center';
+            app.EditField.FontName = 'Avenir Next';
+            app.EditField.FontSize = 14;
+            app.EditField.FontWeight = 'bold';
+            app.EditField.FontColor = [1 1 1];
+            app.EditField.BackgroundColor = [0.149 0.149 0.149];
+            app.EditField.Position = [2 639 917 27];
 
             % Create DecompositionSettingsPanel
             app.DecompositionSettingsPanel = uipanel(app.UIFigure);
@@ -1901,17 +1988,17 @@ classdef MUedit_exported < matlab.apps.AppBase
             app.SelectfileButton.Position = [103 595 116 34];
             app.SelectfileButton.Text = 'Select file';
 
-            % Create NbofextendedchannelsEditFieldLabel
-            app.NbofextendedchannelsEditFieldLabel = uilabel(app.DecompositionSettingsPanel);
-            app.NbofextendedchannelsEditFieldLabel.BackgroundColor = [0.149 0.149 0.149];
-            app.NbofextendedchannelsEditFieldLabel.HorizontalAlignment = 'center';
-            app.NbofextendedchannelsEditFieldLabel.WordWrap = 'on';
-            app.NbofextendedchannelsEditFieldLabel.FontName = 'Avenir Next';
-            app.NbofextendedchannelsEditFieldLabel.FontSize = 13;
-            app.NbofextendedchannelsEditFieldLabel.FontWeight = 'bold';
-            app.NbofextendedchannelsEditFieldLabel.FontColor = [0.3804 0.7804 0.749];
-            app.NbofextendedchannelsEditFieldLabel.Position = [14 159 147 32];
-            app.NbofextendedchannelsEditFieldLabel.Text = 'Nb of extended channels';
+            % Create NbofextendedchannelsLabel
+            app.NbofextendedchannelsLabel = uilabel(app.DecompositionSettingsPanel);
+            app.NbofextendedchannelsLabel.BackgroundColor = [0.149 0.149 0.149];
+            app.NbofextendedchannelsLabel.HorizontalAlignment = 'right';
+            app.NbofextendedchannelsLabel.WordWrap = 'on';
+            app.NbofextendedchannelsLabel.FontName = 'Avenir Next';
+            app.NbofextendedchannelsLabel.FontSize = 13;
+            app.NbofextendedchannelsLabel.FontWeight = 'bold';
+            app.NbofextendedchannelsLabel.FontColor = [0.3804 0.7804 0.749];
+            app.NbofextendedchannelsLabel.Position = [14 159 147 32];
+            app.NbofextendedchannelsLabel.Text = 'Nb of extended channels ';
 
             % Create NbofextendedchannelsEditField
             app.NbofextendedchannelsEditField = uieditfield(app.DecompositionSettingsPanel, 'numeric');
@@ -2026,26 +2113,26 @@ classdef MUedit_exported < matlab.apps.AppBase
             app.CoVfilterDropDown.Position = [103 409 114 26];
             app.CoVfilterDropDown.Value = 'No';
 
-            % Create InitializationDropDownLabel
-            app.InitializationDropDownLabel = uilabel(app.DecompositionSettingsPanel);
-            app.InitializationDropDownLabel.HorizontalAlignment = 'right';
-            app.InitializationDropDownLabel.FontName = 'Avenir Next';
-            app.InitializationDropDownLabel.FontSize = 13;
-            app.InitializationDropDownLabel.FontWeight = 'bold';
-            app.InitializationDropDownLabel.FontColor = [0.5608 0.6196 0.851];
-            app.InitializationDropDownLabel.Position = [11 447 84 22];
-            app.InitializationDropDownLabel.Text = 'Initialization';
+            % Create InitialisationDropDownLabel
+            app.InitialisationDropDownLabel = uilabel(app.DecompositionSettingsPanel);
+            app.InitialisationDropDownLabel.HorizontalAlignment = 'right';
+            app.InitialisationDropDownLabel.FontName = 'Avenir Next';
+            app.InitialisationDropDownLabel.FontSize = 13;
+            app.InitialisationDropDownLabel.FontWeight = 'bold';
+            app.InitialisationDropDownLabel.FontColor = [0.5608 0.6196 0.851];
+            app.InitialisationDropDownLabel.Position = [12 447 83 22];
+            app.InitialisationDropDownLabel.Text = 'Initialisation';
 
-            % Create InitializationDropDown
-            app.InitializationDropDown = uidropdown(app.DecompositionSettingsPanel);
-            app.InitializationDropDown.Items = {'EMG max', 'Random'};
-            app.InitializationDropDown.FontName = 'Avenir Next';
-            app.InitializationDropDown.FontSize = 13;
-            app.InitializationDropDown.FontWeight = 'bold';
-            app.InitializationDropDown.FontColor = [0.5608 0.6196 0.851];
-            app.InitializationDropDown.BackgroundColor = [0.149 0.149 0.149];
-            app.InitializationDropDown.Position = [103 445 114 26];
-            app.InitializationDropDown.Value = 'EMG max';
+            % Create InitialisationDropDown
+            app.InitialisationDropDown = uidropdown(app.DecompositionSettingsPanel);
+            app.InitialisationDropDown.Items = {'EMG max', 'Random'};
+            app.InitialisationDropDown.FontName = 'Avenir Next';
+            app.InitialisationDropDown.FontSize = 13;
+            app.InitialisationDropDown.FontWeight = 'bold';
+            app.InitialisationDropDown.FontColor = [0.5608 0.6196 0.851];
+            app.InitialisationDropDown.BackgroundColor = [0.149 0.149 0.149];
+            app.InitialisationDropDown.Position = [103 445 114 26];
+            app.InitialisationDropDown.Value = 'EMG max';
 
             % Create RefineMUsDropDownLabel
             app.RefineMUsDropDownLabel = uilabel(app.DecompositionSettingsPanel);
@@ -2169,59 +2256,6 @@ classdef MUedit_exported < matlab.apps.AppBase
             app.ContrastfunctionDropDown.BackgroundColor = [0.149 0.149 0.149];
             app.ContrastfunctionDropDown.Position = [103 485 114 26];
             app.ContrastfunctionDropDown.Value = 'logcosh';
-
-            % Create VisualisationPanel
-            app.VisualisationPanel = uipanel(app.UIFigure);
-            app.VisualisationPanel.ForegroundColor = [0.9412 0.9412 0.9412];
-            app.VisualisationPanel.Title = 'Visualisation';
-            app.VisualisationPanel.BackgroundColor = [0.149 0.149 0.149];
-            app.VisualisationPanel.FontName = 'Avenir Next';
-            app.VisualisationPanel.FontWeight = 'bold';
-            app.VisualisationPanel.FontSize = 14;
-            app.VisualisationPanel.Position = [224 1 919 691];
-
-            % Create UIAxes_Decomp_1
-            app.UIAxes_Decomp_1 = uiaxes(app.VisualisationPanel);
-            xlabel(app.UIAxes_Decomp_1, 'Time (s)')
-            ylabel(app.UIAxes_Decomp_1, 'Pulse train')
-            zlabel(app.UIAxes_Decomp_1, 'Z')
-            app.UIAxes_Decomp_1.Toolbar.Visible = 'off';
-            app.UIAxes_Decomp_1.FontName = 'Avenir Next';
-            app.UIAxes_Decomp_1.Color = 'none';
-            app.UIAxes_Decomp_1.FontSize = 14;
-            app.UIAxes_Decomp_1.GridColor = [1 1 1];
-            app.UIAxes_Decomp_1.MinorGridColor = [1 1 1];
-            app.UIAxes_Decomp_1.Interruptible = 'off';
-            app.UIAxes_Decomp_1.HitTest = 'off';
-            app.UIAxes_Decomp_1.PickableParts = 'none';
-            app.UIAxes_Decomp_1.Position = [2 2 916 342];
-
-            % Create UIAxes_Decomp_2
-            app.UIAxes_Decomp_2 = uiaxes(app.VisualisationPanel);
-            xlabel(app.UIAxes_Decomp_2, 'Time (s)')
-            ylabel(app.UIAxes_Decomp_2, 'Reference (Force or EMG amplitude)')
-            zlabel(app.UIAxes_Decomp_2, 'Z')
-            app.UIAxes_Decomp_2.Toolbar.Visible = 'off';
-            app.UIAxes_Decomp_2.FontName = 'Avenir Next';
-            app.UIAxes_Decomp_2.Color = 'none';
-            app.UIAxes_Decomp_2.FontSize = 14;
-            app.UIAxes_Decomp_2.GridColor = [0.15 0.15 0.15];
-            app.UIAxes_Decomp_2.MinorGridColor = [0 0 0];
-            app.UIAxes_Decomp_2.ButtonDownFcn = createCallbackFcn(app, @AddspikesButtonPushed, true);
-            app.UIAxes_Decomp_2.Interruptible = 'off';
-            app.UIAxes_Decomp_2.HitTest = 'off';
-            app.UIAxes_Decomp_2.PickableParts = 'none';
-            app.UIAxes_Decomp_2.Position = [1 350 914 285];
-
-            % Create EditField
-            app.EditField = uieditfield(app.VisualisationPanel, 'text');
-            app.EditField.HorizontalAlignment = 'center';
-            app.EditField.FontName = 'Avenir Next';
-            app.EditField.FontSize = 14;
-            app.EditField.FontWeight = 'bold';
-            app.EditField.FontColor = [1 1 1];
-            app.EditField.BackgroundColor = [0.149 0.149 0.149];
-            app.EditField.Position = [2 639 917 27];
 
             % Show the figure after all components are created
             app.UIFigure.Visible = 'on';

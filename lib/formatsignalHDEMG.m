@@ -131,7 +131,7 @@ if checkEMG == 1
         figure;
         lincol = colormap(turbo(size(ElChannelMap,1)));
         for r = 1:size(ElChannelMap,1)
-            if ch < 65
+            if ch < length(discardChannelsVec) + 1
                 plot(signal(ch,:)/max(signal(ch,:)) + r, 'Color', lincol(r,:), 'LineWidth', 1)
                 grid on
                 hold on

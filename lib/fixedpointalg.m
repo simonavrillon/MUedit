@@ -39,7 +39,7 @@ end
 while delta(k) > TOL && k < maxiter
     % Update weights
     wlast = w; % Save last weights
-    
+
     % Contrast function
     wTX = w' * X;
     A = mean(gp(wTX));

@@ -3,7 +3,7 @@ MUedit is a Matlab app that decomposes electromyographic (EMG) signals recorded 
 
 We provide a step-by-step protocol (User_manual.pdf) to facilitate the implementation of MUedit in any experimental settings. You can also read our preprint that describes the method, the main steps of the experiments, and the capability boundaries of the app (). 
 
-
+A version of the decomposition algorithm coded with Python (Python 3.9.15) is available at https://github.com/ciaragibbs/MUEdit_Python
 
 # Citation and technical support:
 

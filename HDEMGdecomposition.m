@@ -41,28 +41,28 @@ clear
 close all;
 clc;
 %% Input parameters
-parameters.pathname = 'pathname/';
-parameters.filename = 'filename.otb+'; % filename.otb+
+parameters.pathname = 'pathname'; % add a '/' at the end for Mac OS, add a '\' at the end for Windows
+parameters.filename = 'filename'; % filename.otb+ or filename.mat
 
 % DECOMPOSITION PARAMETERS
-parameters.NITER = 150;
+parameters.NITER = 50;
 parameters.ref_exist = 1; % if ref_signal exist ref_exist = 1; if not ref_exist = 0 and manual selection of windows
-parameters.checkEMG = 1; % 0 = Consider all the channels ; 1 = Visual checking
+parameters.checkEMG = 0; % 0 = Consider all the channels ; 1 = Visual checking
 parameters.nwindows = 1; % number of segmented windows over each contraction
 parameters.differentialmode = 0; % 0 = no; 1 = yes (filter out the smallest MU, can improve decomposition at the highest intensities
 parameters.initialization = 1; % 0 = max EMG; 1 = random weights
-parameters.peeloff = 0; % 0 = no; 1 = yes (update the residual EMG by removing the motor units with the highest SIL value)
+parameters.peeloff = 1; % 0 = no; 1 = yes (update the residual EMG by removing the motor units with the highest SIL value)
 parameters.covfilter = 0; % 0 = no; 1 = yes (filter out the motor units with a coefficient of variation of their ISI > than parameters.covthr)
 parameters.refineMU = 0; % 0 = no; 1 = yes (refine the MU spike train over the entire signal 1-remove the discharge times that generate outliers in the discharge rate and 2- reevaluate the MU pulse train)
 parameters.drawingmode = 1; % 0 = Output in the command window ; 1 = Output in a figure
-parameters.duplicatesbgrids = 1; % 0 = do not consider duplicates between grids ; 1 = Remove duplicates between grids
+parameters.duplicatesbgrids = 0; % 0 = do not consider duplicates between grids ; 1 = Remove duplicates between grids
 
 % SPECIFIC VALUES
 parameters.nbelectrodes = 64; % number of electrodes per grid or array
 parameters.thresholdtarget = 0.8; % threshold to segment the target displayed to the participant, 1 being the maxima of the target (e.g., plateau)
 parameters.nbextchan = 1000; % nb of extended channels (1000 in Negro 2016, can be higher to improve the decomposition)
 parameters.edges = 0.2; % edges of the signal to remove after preprocessing the signal (in sec)
-parameters.contrastfunc = 'logcosh'; % contrast functions: 'square', 'skew', 'logcosh'
+parameters.contrastfunc = 'square'; % contrast functions: 'square', 'skew', 'logcosh'
 parameters.silthr = 0.9; % Threshold for SIL values
 parameters.covthr = 0.5; % Threshold for CoV of ISI values
 parameters.peeloffwin = 0.025; % duration of the window (ms) for detecting the action potentials from the EMG signal
@@ -71,7 +71,12 @@ parameters.CoVDR = 0.3; % threshold that define the CoV of Discharge rate that w
 
 %% Step 0: Load the HDsEMG data
 %       0a: determine the number and type of grids
-signal = openOTBplus(parameters.pathname, parameters.filename, parameters.ref_exist, parameters.nbelectrodes);
+C = strsplit(parameters.filename,'.');
+if isequal(C{end}, 'mat')
+    load([parameters.pathname parameters.filename], 'signal');
+else
+    signal = openOTBplus(parameters.pathname, parameters.filename, parameters.ref_exist, parameters.nbelectrodes);
+end
 
 for i = 1:signal.ngrid
     [signal.coordinates{i}, signal.IED(i), signal.EMGmask{i}, signal.emgtype(i)] = formatsignalHDEMG(signal.data((i-1)*parameters.nbelectrodes+1:i*parameters.nbelectrodes,:), signal.gridname{i}, signal.fsamp, parameters.checkEMG, parameters.nbelectrodes);
@@ -193,8 +198,7 @@ if j == 1
         [~, idx1(j)] = max(actind);
         signalprocess.w = signalprocess.X(:, idx1(j)); % Initialize w
     else
-        temp = randn(size(signalprocess.X,1));
-        signalprocess.w = temp(:, 1); % Initialize w
+        signalprocess.w = randn(size(signalprocess.X,1),1);
     end
     time = linspace(0,size(signalprocess.X,2)/signal.fsamp,size(signalprocess.X,2));
 else
@@ -203,8 +207,7 @@ else
         [~, idx1(j)] = max(actind);
         signalprocess.w = signalprocess.X(:, idx1(j)); % Initialize w
     else
-        temp = randn(size(signalprocess.X,1));
-        signalprocess.w = temp(:, 1); % Initialize w
+        signalprocess.w = randn(size(signalprocess.X,1),1);
     end
 end
 

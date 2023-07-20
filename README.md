@@ -19,3 +19,6 @@ Dr. Simon Avrillon
 
 If you use MUedit in your experimental setting, please cite the following preprint.
 >Avrillon S, Hug F, Gibbs C & Farina D. (2023). Tutorial on MUedit: An open-source software for identifying and analysing the discharge timing of motor units from electromyographic signals. bioRxiv, 2023.2007.2013.548568.
+
+
+[![Open in MATLAB Online](https://www.mathworks.com/images/responsive/global/open-in-matlab-online.svg)](https://matlab.mathworks.com/open/github/v1?repo=simonavrillon/MUedit&project=https://github.com/simonavrillon/MUedit/blob/main/MUedit.prj)

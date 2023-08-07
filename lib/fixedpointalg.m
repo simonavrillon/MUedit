@@ -32,8 +32,8 @@ switch contrastfunc
         gp = @(x) 3*x.^2;
         g = @(x) x.^3;
     case 'logcosh'
-        gp = @(x) 1-tanh(x).^2;
-        g = @(x) tanh(x);
+        gp = @(x) tanh(x);
+        g = @(x) log(cosh(x));
 end
 
 while delta(k) > TOL && k < maxiter

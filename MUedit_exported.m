@@ -189,7 +189,7 @@ classdef MUedit_exported < matlab.apps.AppBase
             parameters.covthr = app.COVthresholdEditField.Value; % Threshold for CoV of ISI values
             parameters.CoVDR = 0.3; % threshold that define the CoV of Discharge rate that we want to reach for cleaning the MU discharge times when refineMU is on
             parameters.edges = 0.5; % edges of the signal to remove after preprocessing the signal (in sec)
-            parameters.contrastfunc = app.ContrastfunctionDropDown.Value; % contrast functions: 'square', 'skew', 'logcosh'
+            parameters.contrastfunc = app.ContrastfunctionDropDown.Value; % contrast functions: 'skew', 'kurtosis', 'logcosh'
             parameters.peeloffwin = 0.025; % duration of the window (s) for detecting the action potentials from the EMG signal
             
             % Step 0: Load the HDsEMG data
@@ -2248,7 +2248,7 @@ classdef MUedit_exported < matlab.apps.AppBase
 
             % Create ContrastfunctionDropDown
             app.ContrastfunctionDropDown = uidropdown(app.DecompositionSettingsPanel);
-            app.ContrastfunctionDropDown.Items = {'logcosh', 'square', 'skew'};
+            app.ContrastfunctionDropDown.Items = {'logcosh', 'skew', 'kurtosis'};
             app.ContrastfunctionDropDown.FontName = 'Avenir Next';
             app.ContrastfunctionDropDown.FontSize = 13;
             app.ContrastfunctionDropDown.FontWeight = 'bold';

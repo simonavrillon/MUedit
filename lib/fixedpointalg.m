@@ -43,7 +43,7 @@ while delta(k) > TOL && k < maxiter
     % Contrast function
     wTX = w' * X;
     A = mean(gp(wTX));
-    w = X * (g(wTX')) - A * w;
+    w = mean(X .* g(wTX), 2)  - A * w;
 
 %   3b: Orthogonalization
     w = w - BBT * w;

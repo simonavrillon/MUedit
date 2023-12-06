@@ -234,6 +234,11 @@ classdef MUedit_exported < matlab.apps.AppBase
                     app.EditField.Value = ['EMG amplitude for 50% of the EMG channels - Select the window #' num2str(nwin)];
                     app.roi = drawrectangle(app.UIAxes_Decomp_2);
                     x = [app.roi.Position(1) app.roi.Position(1) + app.roi.Position(3)];
+                    data_length = size(signal.data,2);
+                    % the second value of x can potentially be greater than
+                    % the length of the data matrix, therefore limit x(2)
+                    % to the data, e.g.:
+                    x(2) = min([x(2) data_length]);
                     signalprocess.coordinatesplateau(nwin*2-1) = floor(x(1));
                     signalprocess.coordinatesplateau(nwin*2) = floor(x(2));
                     for i = 1:signal.ngrid

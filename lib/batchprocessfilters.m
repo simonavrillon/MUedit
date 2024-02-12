@@ -33,7 +33,7 @@ MUnb=1;
 for nwin = 1:size(wSIG,2)
     for j = 1:size(MUFilters{nwin},2)
         for nwin2 = 1:size(wSIG,2)
-            PulseT(MUnb,coordinates(nwin2*2-1):coordinates(nwin2*2)+exFactor-1-differentialmode) = MUFilters{nwin}(:,j)'  * wSIG{nwin};
+            PulseT(MUnb,coordinates(nwin2*2-1):coordinates(nwin2*2)+exFactor-1-differentialmode) = MUFilters{nwin}(:,j)'  * wSIG{nwin2};
         end  
         PulseT(MUnb,:) = PulseT(MUnb,:) .* abs(PulseT(MUnb,:));
         [~,spikes] = findpeaks(PulseT(MUnb,:), 'MinPeakDistance', round(fsamp*0.005)); % Peak detection

@@ -41,12 +41,12 @@ clear
 close all;
 clc;
 %% Input parameters
-parameters.pathname = 'pathname'; % add a '/' at the end for Mac OS, add a '\' at the end for Windows
-parameters.filename = 'filename'; % filename.otb+ or filename.mat
+parameters.pathname = '/Users/savrillo/Downloads/'; % add a '/' at the end for Mac OS, add a '\' at the end for Windows
+parameters.filename = '10_DF.otb+'; % filename.otb+ or filename.mat
 
 % DECOMPOSITION PARAMETERS
-parameters.NITER = 50;
-parameters.ref_exist = 1; % if ref_signal exist ref_exist = 1; if not ref_exist = 0 and manual selection of windows
+parameters.NITER = 75;
+parameters.ref_exist = 0; % if ref_signal exist ref_exist = 1; if not ref_exist = 0 and manual selection of windows
 parameters.checkEMG = 0; % 0 = Consider all the channels ; 1 = Visual checking
 parameters.nwindows = 1; % number of segmented windows over each contraction
 parameters.differentialmode = 0; % 0 = no; 1 = yes (filter out the smallest MU, can improve decomposition at the highest intensities
@@ -58,12 +58,11 @@ parameters.drawingmode = 1; % 0 = Output in the command window ; 1 = Output in a
 parameters.duplicatesbgrids = 0; % 0 = do not consider duplicates between grids ; 1 = Remove duplicates between grids
 
 % SPECIFIC VALUES
-parameters.nbelectrodes = 64; % number of electrodes per grid or array
 parameters.thresholdtarget = 0.8; % threshold to segment the target displayed to the participant, 1 being the maxima of the target (e.g., plateau)
 parameters.nbextchan = 1000; % nb of extended channels (1000 in Negro 2016, can be higher to improve the decomposition)
 parameters.edges = 0.2; % edges of the signal to remove after preprocessing the signal (in sec)
 parameters.contrastfunc = 'skew'; % contrast functions: 'skew', 'kurtosis', 'logcosh'
-parameters.silthr = 0.9; % Threshold for SIL values
+parameters.silthr = 0.90; % Threshold for SIL values
 parameters.covthr = 0.5; % Threshold for CoV of ISI values
 parameters.peeloffwin = 0.025; % duration of the window (ms) for detecting the action potentials from the EMG signal
 parameters.duplicatesthresh = 0.3; % threshold that define the minimal percentage of common discharge times between duplicated motor units
@@ -75,13 +74,17 @@ C = strsplit(parameters.filename,'.');
 if isequal(C{end}, 'mat')
     load([parameters.pathname parameters.filename], 'signal');
 else
-    signal = openOTBplus(parameters.pathname, parameters.filename, parameters.ref_exist, parameters.nbelectrodes);
+    [~, signal] = openOTBplus(parameters.pathname, parameters.filename,0);
 end
 
+[signal.coordinates, signal.IED, signal.EMGmask, signal.emgtype] = formatsignalHDEMG(signal.data, signal.gridname, signal.fsamp, parameters.checkEMG);
+
+arraynb = zeros(size(signal.data,1),1);
+ch1 = 1;
 for i = 1:signal.ngrid
-    [signal.coordinates{i}, signal.IED(i), signal.EMGmask{i}, signal.emgtype(i)] = formatsignalHDEMG(signal.data((i-1)*parameters.nbelectrodes+1:i*parameters.nbelectrodes,:), signal.gridname{i}, signal.fsamp, parameters.checkEMG, parameters.nbelectrodes);
+    arraynb(ch1:ch1+length(signal.EMGmask{i})-1) = i;
+    ch1 = ch1+length(signal.EMGmask{i});
 end
-
 %% 
     % Step 0 <opt> Selection of the region of interest
 if parameters.ref_exist == 1
@@ -89,7 +92,7 @@ if parameters.ref_exist == 1
     signalprocess.coordinatesplateau = segmenttargets(signalprocess.ref_signal, parameters.nwindows, parameters.thresholdtarget);
     for nwin = 1:length(signalprocess.coordinatesplateau)/2
         for i = 1:signal.ngrid
-            signalprocess.data{i,nwin} = signal.data((i-1)*parameters.nbelectrodes+1:(i-1)*parameters.nbelectrodes+length(signal.EMGmask{i}), signalprocess.coordinatesplateau(nwin*2-1):signalprocess.coordinatesplateau(nwin*2));
+            signalprocess.data{i,nwin} = signal.data(arraynb==i, signalprocess.coordinatesplateau(nwin*2-1):signalprocess.coordinatesplateau(nwin*2));
             signalprocess.data{i,nwin}(signal.EMGmask{i} == 1,:) = [];
         end
     end
@@ -109,12 +112,14 @@ else
     grid on
     clearvars tmp maskEMG
     [A,B] = ginput(2*parameters.nwindows);
+    A(A<1) = 1;
+    A(A>length(signalprocess.ref_signal)) = length(signalprocess.ref_signal);
     signalprocess.coordinatesplateau = zeros(1,parameters.nwindows*2);
     for nwin = 1:parameters.nwindows
         signalprocess.coordinatesplateau(nwin*2-1) = floor(A(nwin*2-1));
         signalprocess.coordinatesplateau(nwin*2) = floor(A(nwin*2));
         for i = 1:signal.ngrid
-            signalprocess.data{i,nwin} = signal.data((i-1)*parameters.nbelectrodes+1:(i-1)*parameters.nbelectrodes+length(signal.EMGmask{i}), signalprocess.coordinatesplateau(nwin*2-1):signalprocess.coordinatesplateau(nwin*2));
+            signalprocess.data{i,nwin} = signal.data(arraynb==i, signalprocess.coordinatesplateau(nwin*2-1):signalprocess.coordinatesplateau(nwin*2));
             signalprocess.data{i,nwin}(signal.EMGmask{i} == 1,:) = [];
         end
     end
@@ -282,7 +287,7 @@ if size(PulseT,1) > 0
         distimenew = remoutliers(PulseT, distimenew, parameters.CoVDR, signal.fsamp);
     
         % Reevaluate all the unique motor units over the contractions
-        [signal.Pulsetrain{i}, distimenew] = refineMUs(signal.data((i-1)*parameters.nbelectrodes+1:(i-1)*parameters.nbelectrodes+length(signal.EMGmask{i}), :), signal.EMGmask{i}, PulseT, distimenew, signal.fsamp);
+        [signal.Pulsetrain{i}, distimenew] = refineMUs(signal.data(arraynb==i, :), signal.EMGmask{i}, PulseT, distimenew, signal.fsamp);
         
         % Remove outliers generating irrelevant discharge rates before manual
         % edition (2nd time)

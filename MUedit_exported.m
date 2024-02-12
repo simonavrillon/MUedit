@@ -3,15 +3,16 @@ classdef MUedit_exported < matlab.apps.AppBase
     % Properties that correspond to app components
     properties (Access = public)
         UIFigure                       matlab.ui.Figure
-        DecompositionSettingsPanel     matlab.ui.container.Panel
+        tabs                           matlab.ui.control.DropDown
+        Panel                          matlab.ui.container.Panel
+        SegmentsessionButton           matlab.ui.control.Button
+        SetconfigurationButton         matlab.ui.control.Button
         ContrastfunctionDropDown       matlab.ui.control.DropDown
         ContrastfunctionLabel          matlab.ui.control.Label
         DuplicatethresholdEditField    matlab.ui.control.NumericEditField
         DuplicatethresholdEditFieldLabel  matlab.ui.control.Label
         COVthresholdEditField          matlab.ui.control.NumericEditField
         COVthresholdEditFieldLabel     matlab.ui.control.Label
-        NumberofelectrodesEditField    matlab.ui.control.NumericEditField
-        NumberofelectrodesEditFieldLabel  matlab.ui.control.Label
         ThresholdtargetEditField       matlab.ui.control.NumericEditField
         ThresholdtargetEditFieldLabel  matlab.ui.control.Label
         RefineMUsDropDown              matlab.ui.control.DropDown
@@ -37,16 +38,35 @@ classdef MUedit_exported < matlab.apps.AppBase
         SILthresholdEditField          matlab.ui.control.NumericEditField
         SILthresholdEditFieldLabel     matlab.ui.control.Label
         StartButton                    matlab.ui.control.Button
-        VisualisationPanel             matlab.ui.container.Panel
+        Panel_2                        matlab.ui.container.Panel
         EditField                      matlab.ui.control.EditField
         UIAxes_Decomp_2                matlab.ui.control.UIAxes
         UIAxes_Decomp_1                matlab.ui.control.UIAxes
-        ManualeditionPanel             matlab.ui.container.Panel
+        Panel_4                        matlab.ui.container.Panel
+        SILCheckBox                    matlab.ui.control.CheckBox
+        CheckBox                       matlab.ui.control.CheckBox
+        ReferenceDropDown_2            matlab.ui.control.DropDown
+        ReferenceDropDown_2Label       matlab.ui.control.Label
+        RemoveduplicatesbetweengridsButton  matlab.ui.control.Button
+        RemoveduplicateswithingridsButton  matlab.ui.control.Button
+        PlotMUfiringratesButton        matlab.ui.control.Button
+        SavetheeditionLabel            matlab.ui.control.Label
+        VisualisationLabel             matlab.ui.control.Label
+        BatchprocessingLabel           matlab.ui.control.Label
+        SaveButton                     matlab.ui.control.Button
+        PlotMUspiketrainsButton        matlab.ui.control.Button
+        RemoveflaggedMUButton          matlab.ui.control.Button
+        UpdateallMUfiltersButton       matlab.ui.control.Button
+        RemovealltheoutliersButton     matlab.ui.control.Button
+        ImportdataButton               matlab.ui.control.Button
+        SelectfileButton_2             matlab.ui.control.Button
+        EditField_saving_2             matlab.ui.control.EditField
+        Panel_3                        matlab.ui.container.Panel
         LockspikesButton               matlab.ui.control.Button
         UndoButton                     matlab.ui.control.Button
         EditField_2                    matlab.ui.control.EditField
-        ReevaluatewithoutwhiteningButton  matlab.ui.control.Button
-        ReevaluatewithwhiteningButton  matlab.ui.control.Button
+        ExtendMUfilter                 matlab.ui.control.Button
+        UpdateMUfilterButton           matlab.ui.control.Button
         ScrollrightButton              matlab.ui.control.Button
         ZoomoutButton                  matlab.ui.control.Button
         ZoominButton                   matlab.ui.control.Button
@@ -58,26 +78,9 @@ classdef MUedit_exported < matlab.apps.AppBase
         RemoveoutliersButton           matlab.ui.control.Button
         MUdisplayedDropDownLabel       matlab.ui.control.Label
         MUdisplayedDropDown            matlab.ui.control.DropDown
+        UIAxesSIL                      matlab.ui.control.UIAxes
         UIAxesDR                       matlab.ui.control.UIAxes
         UIAxesSpiketrain               matlab.ui.control.UIAxes
-        EditionPanel                   matlab.ui.container.Panel
-        RemoveduplicatesbetweengridsButton  matlab.ui.control.Button
-        RemoveduplicateswithingridsButton  matlab.ui.control.Button
-        PlotMUfiringratesButton        matlab.ui.control.Button
-        SavetheeditionLabel            matlab.ui.control.Label
-        VisualisationLabel             matlab.ui.control.Label
-        BatchprocessingLabel           matlab.ui.control.Label
-        SaveButton                     matlab.ui.control.Button
-        PlotMUspiketrainsButton        matlab.ui.control.Button
-        RemoveflaggedMUButton          matlab.ui.control.Button
-        ReevaluateallMUfiltersButton   matlab.ui.control.Button
-        RemovealltheoutliersButton     matlab.ui.control.Button
-        ImportdataButton               matlab.ui.control.Button
-        SelectfileButton_2             matlab.ui.control.Button
-        EditField_saving_2             matlab.ui.control.EditField
-        TabGroup                       matlab.ui.container.TabGroup
-        DecompositionTab               matlab.ui.container.Tab
-        EditionTab                     matlab.ui.container.Tab
     end
 
     
@@ -88,6 +91,9 @@ classdef MUedit_exported < matlab.apps.AppBase
 
         filename2           % File to edit
         pathname2            % Folder where edited data will be saved
+
+        MUdecomp            % Data for MU decomposition
+        Configuration       % Object for recording configuration
 
         MUedition           % Data for MU edition accross contractions and intensities
         Backup              % Data for MU edition accross contractions and intensities
@@ -105,20 +111,19 @@ classdef MUedit_exported < matlab.apps.AppBase
     % Callbacks that handle component events
     methods (Access = private)
 
-        % Button down function: DecompositionTab
-        function DecompositionTabButtonDown(app, event)
-            app.DecompositionSettingsPanel.Visible = 'on';
-            app.EditionPanel.Visible = 'off';
-            app.ManualeditionPanel.Visible = 'off';
-            app.VisualisationPanel.Visible = 'on';
-        end
-
-        % Button down function: EditionTab
-        function EditionTabButtonDown(app, event)
-            app.DecompositionSettingsPanel.Visible = 'off';
-            app.EditionPanel.Visible = 'on';
-            app.ManualeditionPanel.Visible = 'on';
-            app.VisualisationPanel.Visible = 'off';
+        % Value changed function: tabs
+        function tabsValueChanged(app, event)
+            if isequal(app.tabs.Value, 'DECOMPOSITION')
+                app.Panel.Visible = 'on';
+                app.Panel_4.Visible = 'off';
+                app.Panel_3.Visible = 'off';
+                app.Panel_2.Visible = 'on';
+            else
+                app.Panel.Visible = 'off';
+                app.Panel_4.Visible = 'on';
+                app.Panel_3.Visible = 'on';
+                app.Panel_2.Visible = 'off';
+            end
         end
 
         % Button pushed function: SelectfileButton
@@ -127,22 +132,83 @@ classdef MUedit_exported < matlab.apps.AppBase
             [app.filename,app.pathname] = uigetfile('*.*');
             app.UIFigure.Visible = 'on'; 
             app.EditField_saving_3.Value = app.filename;
+
+            app.SelectfileButton.BackgroundColor = [0.15 0.15 0.15];
+            app.SetconfigurationButton.BackgroundColor = [0.15 0.15 0.15];
+            app.SegmentsessionButton.BackgroundColor = [0.15 0.15 0.15];
+            app.StartButton.BackgroundColor = [0.15 0.15 0.15];
+            app.EditField.Value = ' ';
+
+            % Load files
+            C = strsplit(app.filename,'.');
+            if isequal(C{end}, 'mat')
+                file = load([app.pathname, app.filename]);
+                signal = file.signal;
+                app.SetconfigurationButton.Enable = 'off';
+            elseif isequal(C{end}, 'otb+') % OT Biolab+
+                [app.MUdecomp.config, signal] = openOTBplus(app.pathname, app.filename, 1);
+                if ~isempty(app.MUdecomp.config)
+                    app.MUdecomp.config.UIFigure.Visible = 'off';
+                    movegui(app.MUdecomp.config.UIFigure, 'center')
+                    app.SetconfigurationButton.Enable = 'on';
+                end
+            elseif isequal(C{end}, 'rhd') % RHD Intan Tech
+                [app.MUdecomp.config, signal] = openIntan(app.pathname, app.filename, 1);
+                if ~isempty(app.MUdecomp.config)
+                    app.MUdecomp.config.UIFigure.Visible = 'off';
+                    movegui(app.MUdecomp.config.UIFigure, 'center')
+                    app.SetconfigurationButton.Enable = 'on';
+                end
+            elseif isequal(C{end}, 'oebin') % Open Ephys GUI
+                [app.MUdecomp.config, signal] = openOEphys(app.pathname, app.filename, 1);
+                if ~isempty(app.MUdecomp.config)
+                    app.MUdecomp.config.UIFigure.Visible = 'off';
+                    movegui(app.MUdecomp.config.UIFigure, 'center')
+                    app.SetconfigurationButton.Enable = 'on';
+                end
+            end
+            app.ReferenceDropDown.Items = {};
+            
+            % Update the list of signals for reference
+            if isfield(signal,'auxiliaryname')
+                app.ReferenceDropDown.Items = cat(2, {'EMG amplitude'}, signal.auxiliaryname);
+            elseif isfield(signal,'target')
+                signal.auxiliary = [signal.path; signal.target];
+                signal.auxiliaryname = cat(2, {'Path'}, {'Target'});
+                app.ReferenceDropDown.Items = cat(2, {'EMG amplitude'}, signal.auxiliaryname);
+            else
+                app.ReferenceDropDown.Items = {'EMG amplitude'};
+            end
+            
+            savename = [app.pathname app.filename '_decomp.mat'];
+            save(savename, 'signal', '-v7.3');
+            app.SelectfileButton.BackgroundColor = [0.5 0.5 0.5];
+            app.EditField.Value = 'Data loaded';
+        end
+
+        % Button pushed function: SetconfigurationButton
+        function SetconfigurationButtonPushed(app, event)
+            app.MUdecomp.config.pathname.Value = [app.pathname app.filename '_decomp.mat'];
+            app.MUdecomp.config.UIFigure.Visible = 'on';
+            app.SetconfigurationButton.BackgroundColor = [0.5 0.5 0.5];
+        end
+
+        % Button pushed function: SegmentsessionButton
+        function SegmentsessionButtonPushed(app, event)
+            app.MUdecomp.config = segmentsession;
+            movegui(app.MUdecomp.config.UIFigure, 'center')
+            app.MUdecomp.config.pathname.Value = [app.pathname app.filename '_decomp.mat'];
+            app.MUdecomp.config.ReferenceDropDown.Items = {};
+            app.MUdecomp.config.ReferenceDropDown.Items = app.ReferenceDropDown.Items;
+            app.MUdecomp.config.ReferenceDropDown.Value = app.ReferenceDropDown.Value;
+            app.SegmentsessionButton.BackgroundColor = [0.5 0.5 0.5];
         end
 
         % Button pushed function: StartButton
         function StartButtonPushed(app, event)
-
+            
             app.UIAxes_Decomp_2.XColor = [0.9412 0.9412 0.9412];
             app.UIAxes_Decomp_2.YColor = [0.9412 0.9412 0.9412];
-
-            % if Force, automatic segmentation of the target; if EMG
-            % amplitude, manual selection of the windows based on EMG
-            % amplitude
-            if isequal(app.ReferenceDropDown.Value, 'Force')
-                parameters.ref_exist = 1;
-            else
-                parameters.ref_exist = 0;
-            end
             
             % No = Consider all the channels ; Yes = Visual checking
             if isequal(app.CheckEMGDropDown.Value, 'Yes')
@@ -181,7 +247,6 @@ classdef MUedit_exported < matlab.apps.AppBase
             
             parameters.NITER = app.NumberofiterationsEditField_2.Value; % number of iteration for each grid
             parameters.nwindows = app.NumberofwindowsEditField.Value; % number of segmented windows over each contraction
-            parameters.nbelectrodes = app.NumberofelectrodesEditField.Value; % number of electrodes per grid or array
             parameters.thresholdtarget = app.ThresholdtargetEditField.Value; % threshold to segment the target displayed to the participant, 1 being the maxima of the target (e.g., plateau)
             parameters.nbextchan = app.NbofextendedchannelsEditField.Value; % nb of extended channels (1000 in Negro 2016, can be higher to improve the decomposition)
             parameters.duplicatesthresh = app.DuplicatethresholdEditField.Value; % threshold that define the minimal percentage of common discharge times between duplicated motor units
@@ -194,27 +259,27 @@ classdef MUedit_exported < matlab.apps.AppBase
             
             % Step 0: Load the HDsEMG data
             % 0a: determine the number and type of grids
-            C = strsplit(app.filename,'.');
-            if isequal(C{end}, 'mat')
-                load([app.pathname app.filename], 'signal');
-            else
-                signal = openOTBplus(app.pathname, app.filename, parameters.ref_exist, parameters.nbelectrodes);
+            file = load([app.pathname app.filename '_decomp.mat']);
+            signal = file.signal;
+            
+            [signal.coordinates, signal.IED, signal.EMGmask, signal.emgtype] = formatsignalHDEMG(signal.data, signal.gridname, signal.fsamp, parameters.checkEMG);
+            arraynb = zeros(size(signal.data,1),1);
+            ch1 = 1;
+            for i = 1:signal.ngrid
+                arraynb(ch1:ch1+length(signal.EMGmask{i})-1) = i;
+                ch1 = ch1+length(signal.EMGmask{i});
             end
 
-            for i = 1:signal.ngrid
-                [signal.coordinates{i}, signal.IED(i), signal.EMGmask{i}, signal.emgtype(i)] = formatsignalHDEMG(signal.data((i-1)*parameters.nbelectrodes+1:i*parameters.nbelectrodes,:), signal.gridname{i}, signal.fsamp, parameters.checkEMG, parameters.nbelectrodes);
-            end
-            
-            if parameters.ref_exist == 1
+            if contains(app.ReferenceDropDown.Value, 'Target')
                 signalprocess.ref_signal = signal.target;
                 signalprocess.coordinatesplateau = segmenttargets(signalprocess.ref_signal, parameters.nwindows, parameters.thresholdtarget);
                 for nwin = 1:length(signalprocess.coordinatesplateau)/2
                     for i = 1:signal.ngrid
-                        signalprocess.data{i,nwin} = signal.data((i-1)*parameters.nbelectrodes+1:(i-1)*parameters.nbelectrodes+length(signal.EMGmask{i}), signalprocess.coordinatesplateau(nwin*2-1):signalprocess.coordinatesplateau(nwin*2));
+                        signalprocess.data{i,nwin} = signal.data(arraynb==i, signalprocess.coordinatesplateau(nwin*2-1):signalprocess.coordinatesplateau(nwin*2));
                         signalprocess.data{i,nwin}(signal.EMGmask{i} == 1,:) = [];
                     end
                 end
-            else
+            elseif contains(app.ReferenceDropDown.Value, 'EMG amplitude')
                 tmp = zeros(floor(size(signal.data,1)/2), size(signal.data,2));
                 for i = 1:floor(size(signal.data,1)/2)
                     tmp(i,:) = movmean(abs(signal.data(i,:)), signal.fsamp);
@@ -232,18 +297,54 @@ classdef MUedit_exported < matlab.apps.AppBase
                 hold(app.UIAxes_Decomp_2, 'off')
                 for nwin = 1:parameters.nwindows
                     app.EditField.Value = ['EMG amplitude for 50% of the EMG channels - Select the window #' num2str(nwin)];
-                    app.roi = drawrectangle(app.UIAxes_Decomp_2);
+                    app.roi = drawrectangle(app.UIAxes_Decomp_2, 'DrawingArea', 'auto');
                     x = [app.roi.Position(1) app.roi.Position(1) + app.roi.Position(3)];
+                    x = sort(x,'ascend');
+                    x(x<1) = 1;
+                    x(x>length(signalprocess.ref_signal)) = length(signalprocess.ref_signal);
                     signalprocess.coordinatesplateau(nwin*2-1) = floor(x(1));
                     signalprocess.coordinatesplateau(nwin*2) = floor(x(2));
                     for i = 1:signal.ngrid
-                        signalprocess.data{i,nwin} = signal.data((i-1)*parameters.nbelectrodes+1:(i-1)*parameters.nbelectrodes+length(signal.EMGmask{i}), signalprocess.coordinatesplateau(nwin*2-1):signalprocess.coordinatesplateau(nwin*2));
+                        signalprocess.data{i,nwin} = signal.data(arraynb==i, signalprocess.coordinatesplateau(nwin*2-1):signalprocess.coordinatesplateau(nwin*2));
                         signalprocess.data{i,nwin}(signal.EMGmask{i} == 1,:) = [];
                     end
                 end
                 clearvars x
+            else
+                for i = 1:length(signal.auxiliaryname)
+                    if contains(app.ReferenceDropDown.Value, signal.auxiliaryname{i})
+                        idx = i;
+                    end
+                end
+                signalprocess.ref_signal = signal.auxiliary(idx,:);
+                signalprocess.ref_signal = (signalprocess.ref_signal-signalprocess.ref_signal(1))/max((signalprocess.ref_signal-signalprocess.ref_signal(1)));
+                signal.target = signalprocess.ref_signal;
+                signal.path = signalprocess.ref_signal;
+                plot(app.UIAxes_Decomp_2, signalprocess.ref_signal, 'Color', [0.5 0.5 0.5], 'LineWidth', 2)
+                app.UIAxes_Decomp_2.XColor = [0.9412 0.9412 0.9412];
+                app.UIAxes_Decomp_2.YColor = [0.9412 0.9412 0.9412];
+                app.UIAxes_Decomp_2.YLim = [1 length(signal.target)];
+                app.UIAxes_Decomp_2.YLim = [0 max(signalprocess.ref_signal)*1.2];
+                hold(app.UIAxes_Decomp_2, 'off')
+                for nwin = 1:parameters.nwindows
+                    app.EditField.Value = [signal.auxiliaryname{idx} ' - Select the window #' num2str(nwin)];
+                    app.roi = drawrectangle(app.UIAxes_Decomp_2, 'DrawingArea', 'auto');
+                    x = [app.roi.Position(1) app.roi.Position(1) + app.roi.Position(3)];
+                    x = sort(x,'ascend');
+                    x(x<1) = 1;
+                    x(x>length(signalprocess.ref_signal)) = length(signalprocess.ref_signal);
+                    signalprocess.coordinatesplateau(nwin*2-1) = floor(x(1));
+                    signalprocess.coordinatesplateau(nwin*2) = floor(x(2));
+                    for i = 1:signal.ngrid
+                        signalprocess.data{i,nwin} = signal.data(arraynb==i, signalprocess.coordinatesplateau(nwin*2-1):signalprocess.coordinatesplateau(nwin*2));
+                        signalprocess.data{i,nwin}(signal.EMGmask{i} == 1,:) = [];
+                    end
+                end
+                clearvars x idx
             end
             
+            signalprocess.time = linspace(0,length(signalprocess.ref_signal)/signal.fsamp,length(signalprocess.ref_signal));
+
             app.UIAxes_Decomp_1.XColor = [0.9412 0.9412 0.9412];
             app.UIAxes_Decomp_1.YColor = [0.9412 0.9412 0.9412];
 
@@ -252,14 +353,14 @@ classdef MUedit_exported < matlab.apps.AppBase
             
             % Step 1: Preprocessing
             %       1a: Removing line interference (Notch filter)
-                f = waitbar(0.2, ['Grid #' num2str(i) ' - Preprocessing - Filtering the HDsEMG data']);
+                f = waitbar(0.2, ['Array #' num2str(i) ' - Preprocessing - Filtering EMG signals']);
                 signalprocess.data{i,nwin} = notchsignals(signalprocess.data{i,nwin},signal.fsamp);
             %       1b: Bandpass filtering
                 signalprocess.data{i,nwin} = bandpassingals(signalprocess.data{i,nwin},signal.fsamp, signal.emgtype(i));
                         
             %       1c: Signal extension (extension factor calculated to reach 1000
             %       channels)
-                waitbar(0.4, f, ['Grid #' num2str(i) ' - Preprocessing - Extending the HDsEMG data'])
+                waitbar(0.4, f, ['Array #' num2str(i) ' - Preprocessing - Extending EMG signals'])
             
                 signalprocess.exFactor = round(parameters.nbextchan/size(signalprocess.data{i,nwin},1));
                 signalprocess.ReSIG = zeros(signalprocess.exFactor * size(signalprocess.data{i,nwin},1));
@@ -278,7 +379,7 @@ classdef MUedit_exported < matlab.apps.AppBase
             
             %       2a: Get eigenvalues and eigenvectors (regularization factor =>
             %       average smallest half of eigenvalues)
-                waitbar(0.6, f, ['Grid #' num2str(i) ' - Preprocessing - Whitening the HDsEMG data'])
+                waitbar(0.6, f, ['Array #' num2str(i) ' - Preprocessing - Whitening EMG signals'])
                 [E, D] = pcaesig(signalprocess.eSIG{nwin}); %Returns the eigenvector (E) and diagonal eigenvalue (D) matrices
             
             %       2b: Zero-phase component analysis
@@ -296,7 +397,7 @@ classdef MUedit_exported < matlab.apps.AppBase
             
             % Step 3: FastICA method
             
-            waitbar(0.8, f, ['Grid #' num2str(i) ' - Decomposition - Decomposing the HDsEMG data'])
+            waitbar(0.8, f, ['Array #' num2str(i) ' - Decomposition - Decomposing EMG signals'])
             
             % Initialize matrix B (n x m) n: separation vectors, m: iterations 
             % Initialize matrix MUFilters to only save the reliable filters
@@ -326,7 +427,7 @@ classdef MUedit_exported < matlab.apps.AppBase
                 else
                     signalprocess.w = randn(size(signalprocess.X,1),1); % Initialize w
                 end
-                time = linspace(0,size(signalprocess.X,2)/signal.fsamp,size(signalprocess.X,2));
+                signalprocess.time2 = linspace(signalprocess.time(signalprocess.coordinatesplateau(nwin*2-1)),signalprocess.time(signalprocess.coordinatesplateau(nwin*2)),size(signalprocess.X,2));
             else
                 if parameters.initialization == 1
                     actind(idx1(j-1)) = 0; % remove the previous vector
@@ -368,15 +469,18 @@ classdef MUedit_exported < matlab.apps.AppBase
                    signalprocess.X = peeloff(signalprocess.X, signalprocess.spikes, signal.fsamp, parameters.peeloffwin);
                 end
             
-                plot(app.UIAxes_Decomp_2, signal.target, 'k--', 'LineWidth', 2, 'Color', [0.9412 0.9412 0.9412])
-                line(app.UIAxes_Decomp_2,[signalprocess.coordinatesplateau(nwin*2-1) signalprocess.coordinatesplateau(nwin*2-1)],[0 max(signal.target)], 'Color', [0.85 0.33 0.10], 'LineWidth', 2)
-                line(app.UIAxes_Decomp_2,[signalprocess.coordinatesplateau(nwin*2) signalprocess.coordinatesplateau(nwin*2)],[0 max(signal.target)], 'Color', [0.85 0.33 0.10], 'LineWidth', 2)
-                app.EditField.Value = ['Grid #' num2str(i) ' - Iteration #' num2str(j) ' - Sil = ' num2str(signalprocess.SIL{nwin}(j)) ' CoV = ' num2str(signalprocess.CoV{nwin}(j))];
-                plot(app.UIAxes_Decomp_1,time,signalprocess.icasig,time(signalprocess.spikes),signalprocess.icasig(signalprocess.spikes),'o', 'LineWidth', 1, 'Color', [0.9412 0.9412 0.9412], 'MarkerSize', 10, 'MarkerEdgeColor', [0.85 0.33 0.10]);
+                plot(app.UIAxes_Decomp_2, signalprocess.time, signal.target, 'k--', 'LineWidth', 2, 'Color', [0.9412 0.9412 0.9412])
+                line(app.UIAxes_Decomp_2,[signalprocess.time(signalprocess.coordinatesplateau(nwin*2-1)) signalprocess.time(signalprocess.coordinatesplateau(nwin*2-1))],[0 max(signal.target)], 'Color', [0.85 0.33 0.10], 'LineWidth', 2)
+                line(app.UIAxes_Decomp_2,[signalprocess.time(signalprocess.coordinatesplateau(nwin*2)) signalprocess.time(signalprocess.coordinatesplateau(nwin*2))],[0 max(signal.target)], 'Color', [0.85 0.33 0.10], 'LineWidth', 2)
+                app.EditField.Value = ['Array #' num2str(i) ' - Iteration #' num2str(j) ' - Sil = ' num2str(signalprocess.SIL{nwin}(j)) ' CoV = ' num2str(signalprocess.CoV{nwin}(j))];
+                plot(app.UIAxes_Decomp_1,signalprocess.time2,signalprocess.icasig,signalprocess.time2(signalprocess.spikes),signalprocess.icasig(signalprocess.spikes),'o', 'LineWidth', 1, 'Color', [0.9412 0.9412 0.9412], 'MarkerSize', 10, 'MarkerEdgeColor', [0.85 0.33 0.10]);
                 app.UIAxes_Decomp_1.YLim = [-0.2 1.5];
                 drawnow;
             else
                 signalprocess.B(:,j) = signalprocess.w;
+                app.EditField.Value = ['Array #' num2str(i) ' - Iteration #' num2str(j)];
+                plot(app.UIAxes_Decomp_1,signalprocess.time2,signalprocess.icasig,signalprocess.time2(signalprocess.spikes),signalprocess.icasig(signalprocess.spikes),'o', 'LineWidth', 1, 'Color', [0.9412 0.9412 0.9412], 'MarkerSize', 10, 'MarkerEdgeColor', [0.85 0.33 0.10]);
+                drawnow;
             end
             end
                         
@@ -389,7 +493,7 @@ classdef MUedit_exported < matlab.apps.AppBase
             
             end
             
-            f = waitbar(0.8,['Grid #' num2str(i) ' - Postprocessing']);
+            f = waitbar(0.8,['Array #' num2str(i) ' - Postprocessing']);
             
             % Batch processing over each window
             [PulseT, distime] = batchprocessfilters(signalprocess.MUFilters, signalprocess.wSIG, signalprocess.coordinatesplateau, signalprocess.exFactor, 0, size(signal.data,2), signal.fsamp);
@@ -404,7 +508,7 @@ classdef MUedit_exported < matlab.apps.AppBase
                     distimenew = remoutliers(PulseT, distimenew, parameters.CoVDR, signal.fsamp);
                 
                     % Reevaluate all the unique motor units over the contractions
-                    [signal.Pulsetrain{i}, distimenew] = refineMUs(signal.data((i-1)*parameters.nbelectrodes+1:(i-1)*parameters.nbelectrodes+length(signal.EMGmask{i}), :), signal.EMGmask{i}, PulseT, distimenew, signal.fsamp);
+                    [signal.Pulsetrain{i}, distimenew] = refineMUs(signal.data(arraynb==i, :), signal.EMGmask{i}, PulseT, distimenew, signal.fsamp);
                     
                     % Remove outliers generating irrelevant discharge rates before manual
                     % edition (2nd time)
@@ -422,13 +526,11 @@ classdef MUedit_exported < matlab.apps.AppBase
             close(f);
             end
 
-            parameters.intensity = max(signal.target);
-
             app.EditField.Value = 'Saving data';
             % Save file
             clearvars signalprocess i j PulseT distime distimenew actind idx1 time ISI CoV maxiter nwin Wini temp
             savename = [app.pathname app.filename '_decomp.mat'];
-            save(savename, 'signal', 'parameters');
+            save(savename, 'signal', 'parameters', '-v7.3');
             app.EditField.Value = 'Data saved';
             app.StartButton.BackgroundColor = [0.5 0.5 0.5];
         end
@@ -451,8 +553,14 @@ classdef MUedit_exported < matlab.apps.AppBase
                 for i = 1:size(files.edition.Pulsetrain,2)
                     % Update the list and load the edited files
                     for j = 1:size(files.edition.Pulsetrain{i},1)
-                        app.MUdisplayedDropDown.Items = horzcat(app.MUdisplayedDropDown.Items, {['Grid_', num2str(i), '_MU_' , num2str(j)]});
-                        files.edition.silval{i,j} = getsil(files.edition.Pulsetrain{i}(j,:), files.signal.fsamp);
+                        app.MUdisplayedDropDown.Items = horzcat(app.MUdisplayedDropDown.Items, {['Array_', num2str(i), '_MU_' , num2str(j)]});
+                        if length(files.edition.Dischargetimes{i,j}) > 2
+                            files.edition.silval{i,j} = getsil(files.edition.Pulsetrain{i}(j,:), files.signal.fsamp);
+                            files.edition.silvalcon{i,j} = refinesil(files.edition.Pulsetrain{i}(j,:), files.edition.Dischargetimes{i,j}, files.signal.fsamp);
+                        else
+                            files.edition.silval{i,j} = 0;
+                        end
+
                     end
                 end
                 app.MUdisplayedDropDown.Enable = 'on';
@@ -463,17 +571,33 @@ classdef MUedit_exported < matlab.apps.AppBase
                     files.edition.Pulsetrain{i} = files.signal.Pulsetrain{i};
                     for j = 1:size(files.signal.Pulsetrain{i},1)
                         files.edition.Dischargetimes{i,j} = files.signal.Dischargetimes{i,j};
-                        app.MUdisplayedDropDown.Items = horzcat(app.MUdisplayedDropDown.Items, {['Grid_', num2str(i), '_MU_' , num2str(j)]});
+                        app.MUdisplayedDropDown.Items = horzcat(app.MUdisplayedDropDown.Items, {['Array_', num2str(i), '_MU_' , num2str(j)]});
 
                         if length(files.edition.Dischargetimes{i,j}) > 2
                             files.edition.silval{i,j} = getsil(files.signal.Pulsetrain{i}(j,:), files.signal.fsamp);
+                            files.edition.silvalcon{i,j} = refinesil(files.signal.Pulsetrain{i}(j,:), files.signal.Dischargetimes{i,j}, files.signal.fsamp);
                         else
-                            files.edition.silval{i,j} = 1;
+                            files.edition.silval{i,j} = 0;
                         end
                         files.edition.time = linspace(0,size(files.signal.Pulsetrain{i},2)/files.signal.fsamp, size(files.signal.Pulsetrain{i},2));
                     end
                 end
                 app.MUdisplayedDropDown.Enable = 'on';
+            end
+
+            files.edition.arraynb = zeros(size(files.signal.data,1),1);
+            ch1 = 1;
+            for i = 1:files.signal.ngrid
+                files.edition.arraynb(ch1:ch1+length(files.signal.EMGmask{i})-1) = i;
+                ch1 = ch1+length(files.signal.EMGmask{i});
+            end
+
+            % Update the list of references with Auxiliary data
+            app.ReferenceDropDown_2.Items = {};
+            if isfield(files.signal, 'auxiliary')
+                app.ReferenceDropDown_2.Items = files.signal.auxiliaryname;
+                app.ReferenceDropDown_2.Value = files.signal.auxiliaryname{1};
+                files.signal.target = files.signal.auxiliary(1,:);
             end
             
             % Display the first MU
@@ -481,8 +605,9 @@ classdef MUedit_exported < matlab.apps.AppBase
 
             plot(app.UIAxesSpiketrain, files.edition.time, files.edition.Pulsetrain{str2double(C{2})}(str2double(C{4}),:), 'Color', [0.9412 0.9412 0.9412], 'LineWidth', 1);
             hold(app.UIAxesSpiketrain, 'on')
-            plot(app.UIAxesSpiketrain, files.edition.time, files.signal.target/max(files.signal.target), '--', 'Color', [0.9412 0.9412 0.9412], 'LineWidth', 1);
             plot(app.UIAxesSpiketrain, files.edition.time(files.edition.Dischargetimes{str2double(C{2}),str2double(C{4})}), files.edition.Pulsetrain{str2double(C{2})}(1,files.edition.Dischargetimes{str2double(C{2}),str2double(C{4})}), 'o', 'LineWidth', 1, 'MarkerSize', 10, 'Color', [0.85 0.33 0.10]);
+            plot(app.UIAxesSpiketrain, files.edition.time, files.signal.target/max(files.signal.target), '--', 'Color', [0.9412 0.9412 0.9412], 'LineWidth', 1);
+
             hold(app.UIAxesSpiketrain, 'off')
             app.UIAxesSpiketrain.XColor = [0.9412 0.9412 0.9412];
             app.UIAxesSpiketrain.YColor = [0.9412 0.9412 0.9412];
@@ -497,9 +622,19 @@ classdef MUedit_exported < matlab.apps.AppBase
 
             app.EditField_2.Value = ['SIL = ' num2str(files.edition.silval{1,1})];
 
+            if app.SILCheckBox.Value == 1
+                bar(app.UIAxesSIL, files.edition.time(files.edition.silvalcon{1,1}(:,1)), files.edition.silvalcon{1,1}(:,2), 'EdgeColor', [0.9412 0.9412 0.9412], 'FaceColor', [0.15 0.15 0.15]);
+                yline(app.UIAxesSIL, 0.9, 'LineWidth', 2, 'Color', [0.4660 0.6740 0.1880]);
+                app.UIAxesSIL.XLim = [files.edition.time(1) files.edition.time(end)];
+                app.UIAxesSIL.YLim = [0.5 1];
+                app.UIAxesSIL.XAxis.Visible = 'Off';
+                app.UIAxesSIL.YColor = [0.9412 0.9412 0.9412];
+            end
+
             app.UIAxesSpiketrain.XLim = [files.edition.time(1) files.edition.time(end)];
             app.UIAxesDR.XLim = [files.edition.time(1) files.edition.time(end)];
             app.UIAxesDR.YLim = [0 max(DR)*1.5];
+
 
             app.UIAxesSpiketrain.YLim = [-0.05 1.5];
             app.UIAxesDR.XColor = [0.9412 0.9412 0.9412];
@@ -542,6 +677,73 @@ classdef MUedit_exported < matlab.apps.AppBase
             app.UIAxesDR.XLim = [app.graphstart app.graphend];
             app.UIAxesSpiketrain.YLim = [-0.05 1.5];
 
+            if app.SILCheckBox.Value == 1
+                bar(app.UIAxesSIL, app.MUedition.edition.time(app.MUedition.edition.silvalcon{str2double(C{2}),str2double(C{4})}(:,1)), app.MUedition.edition.silvalcon{str2double(C{2}),str2double(C{4})}(:,2), 'EdgeColor', [0.9412 0.9412 0.9412], 'FaceColor', [0.15 0.15 0.15]);
+                yline(app.UIAxesSIL, 0.9, 'LineWidth', 2, 'Color', [0.4660 0.6740 0.1880]);
+                app.UIAxesSIL.XLim = [app.graphstart app.graphend];
+                app.UIAxesSIL.YLim = [0.5 1];
+                app.UIAxesSIL.XAxis.Visible = 'Off';
+                app.UIAxesSIL.YColor = [0.9412 0.9412 0.9412];
+            end
+
+        end
+
+        % Value changed function: ReferenceDropDown_2
+        function ReferenceDropDown_2ValueChanged(app, event)
+            if contains(app.ReferenceDropDown_2.Value, 'EMG amplitude')
+                tmp = zeros(floor(size(app.MUedition.signal.data,1)/2), size(app.MUedition.signal.data,2));
+                for i = 1:floor(size(app.MUedition.signal.data,1)/2)
+                    tmp(i,:) = movmean(abs(app.MUedition.signal.data(i,:)), app.MUedition.signal.fsamp);
+                end
+                app.MUedition.signal.target = mean(tmp,1);
+                app.MUedition.signal.path = mean(tmp,1);
+                % Update the graph
+                plot(app.UIAxesSpiketrain, app.MUedition.edition.time, app.MUedition.edition.Pulsetrain{1}(1,:), 'Color', [0.9412 0.9412 0.9412], 'LineWidth', 1);
+                hold(app.UIAxesSpiketrain, 'on')
+                plot(app.UIAxesSpiketrain, app.MUedition.edition.time, app.MUedition.signal.target/max(app.MUedition.signal.target), '--', 'LineWidth', 1, 'Color', [0.9412 0.9412 0.9412]);
+                plot(app.UIAxesSpiketrain, app.MUedition.edition.time(app.MUedition.edition.Dischargetimes{1,1}), app.MUedition.edition.Pulsetrain{1}(1,app.MUedition.edition.Dischargetimes{1,1}), 'o', 'LineWidth', 1, 'MarkerSize', 10, 'Color', [0.85 0.33 0.10]);
+                hold(app.UIAxesSpiketrain, 'off')
+                app.UIAxesSpiketrain.YLim = [-0.05 1.5];
+                app.UIAxesSpiketrain.XLim = [app.graphstart app.graphend];
+
+            else
+                for i = 1:length(app.MUedition.signal.auxiliaryname)
+                    if contains(app.ReferenceDropDown_2.Value, app.MUedition.signal.auxiliaryname{i})
+                        idx = i;
+                    end
+                end
+                app.MUedition.signal.target = (app.MUedition.signal.auxiliary(idx,:)-app.MUedition.signal.auxiliary(idx,1))/max(app.MUedition.signal.auxiliary(idx,:)-app.MUedition.signal.auxiliary(idx,1));
+                app.MUedition.signal.path = (app.MUedition.signal.auxiliary(idx,:)-app.MUedition.signal.auxiliary(idx,1))/max(app.MUedition.signal.auxiliary(idx,:)-app.MUedition.signal.auxiliary(idx,1));
+                % Update the graph
+                plot(app.UIAxesSpiketrain, app.MUedition.edition.time, app.MUedition.edition.Pulsetrain{1}(1,:), 'Color', [0.9412 0.9412 0.9412], 'LineWidth', 1);
+                hold(app.UIAxesSpiketrain, 'on')
+                plot(app.UIAxesSpiketrain, app.MUedition.edition.time, app.MUedition.signal.target/max(app.MUedition.signal.target), '--', 'LineWidth', 1, 'Color', [0.9412 0.9412 0.9412]);
+                plot(app.UIAxesSpiketrain, app.MUedition.edition.time(app.MUedition.edition.Dischargetimes{1,1}), app.MUedition.edition.Pulsetrain{1}(1,app.MUedition.edition.Dischargetimes{1,1}), 'o', 'LineWidth', 1, 'MarkerSize', 10, 'Color', [0.85 0.33 0.10]);
+                hold(app.UIAxesSpiketrain, 'off')
+                app.UIAxesSpiketrain.YLim = [-0.05 1.5];
+                app.UIAxesSpiketrain.XLim = [app.graphstart app.graphend];
+            end
+            
+        end
+
+        % Value changed function: SILCheckBox
+        function SILCheckBoxValueChanged(app, event)
+            if app.SILCheckBox.Value == 1
+                app.UIAxesDR.Position = [5,492,1089,212];
+                app.UIAxesSIL.Visible = 'on';
+                C = strsplit(app.MUdisplayedDropDown.Value,'_');
+                % Update the graph
+                app.EditField_2.Value = ['SIL = ' num2str(app.MUedition.edition.silval{str2double(C{2}),str2double(C{4})})];
+
+                bar(app.UIAxesSIL, app.MUedition.edition.time(app.MUedition.edition.silvalcon{str2double(C{2}),str2double(C{4})}(:,1)), app.MUedition.edition.silvalcon{str2double(C{2}),str2double(C{4})}(:,2), 'EdgeColor', [0.9412 0.9412 0.9412], 'FaceColor', [0.15 0.15 0.15]);
+                yline(app.UIAxesSIL, 0.9, 'LineWidth', 2, 'Color', [0.4660 0.6740 0.1880]);
+                app.UIAxesSIL.XAxis.Visible = 'Off';
+                app.UIAxesSIL.YColor = [0.9412 0.9412 0.9412]; 
+            else
+                app.UIAxesDR.Position = [5,492,1089,290];
+                cla(app.UIAxesSIL)
+                app.UIAxesSIL.Visible = 'off';
+            end
         end
 
         % Button pushed function: ZoominButton
@@ -554,6 +756,8 @@ classdef MUedit_exported < matlab.apps.AppBase
             app.UIAxesSpiketrain.XLim = [app.graphstart app.graphend];
             app.UIAxesDR.XLim = [app.graphstart app.graphend];
             app.UIAxesSpiketrain.YLim = [-0.05 1.5];
+            app.UIAxesSIL.XLim = [app.graphstart app.graphend];
+            app.UIAxesSIL.YLim = [0.5 1];
         end
 
         % Button pushed function: ZoomoutButton
@@ -567,12 +771,16 @@ classdef MUedit_exported < matlab.apps.AppBase
                 app.UIAxesSpiketrain.XLim = [app.graphstart app.graphend];
                 app.UIAxesDR.XLim = [app.graphstart app.graphend];
                 app.UIAxesSpiketrain.YLim = [-0.05 1.5];
+                app.UIAxesSIL.XLim = [app.graphstart app.graphend];
+                app.UIAxesSIL.YLim = [0.5 1];
             else
                 app.graphstart = center - duration/2;
                 app.graphend = center + duration/2;
                 app.UIAxesSpiketrain.XLim = [app.graphstart app.graphend];
                 app.UIAxesDR.XLim = [app.graphstart app.graphend];
                 app.UIAxesSpiketrain.YLim = [-0.05 1.5];
+                app.UIAxesSIL.XLim = [app.graphstart app.graphend];
+                app.UIAxesSIL.YLim = [0.5 1];
             end
         end
 
@@ -586,12 +794,16 @@ classdef MUedit_exported < matlab.apps.AppBase
                 app.UIAxesSpiketrain.XLim = [app.graphstart app.graphend];
                 app.UIAxesDR.XLim = [app.graphstart app.graphend];
                 app.UIAxesSpiketrain.YLim = [-0.05 1.5];
+                app.UIAxesSIL.XLim = [app.graphstart app.graphend];
+                app.UIAxesSIL.YLim = [0.5 1];
             else
                 app.graphstart = app.graphstart - step;
                 app.graphend = app.graphstart + duration;
                 app.UIAxesSpiketrain.XLim = [app.graphstart app.graphend];
                 app.UIAxesDR.XLim = [app.graphstart app.graphend];
                 app.UIAxesSpiketrain.YLim = [-0.05 1.5];
+                app.UIAxesSIL.XLim = [app.graphstart app.graphend];
+                app.UIAxesSIL.YLim = [0.5 1];
             end
         end
 
@@ -605,12 +817,16 @@ classdef MUedit_exported < matlab.apps.AppBase
                 app.UIAxesSpiketrain.XLim = [app.graphstart app.graphend];
                 app.UIAxesDR.XLim = [app.graphstart app.graphend];
                 app.UIAxesSpiketrain.YLim = [-0.05 1.5];
+                app.UIAxesSIL.XLim = [app.graphstart app.graphend];
+                app.UIAxesSIL.YLim = [0.5 1];
             else
                 app.graphend = app.graphend + step;
                 app.graphstart = app.graphend - duration;
                 app.UIAxesSpiketrain.XLim = [app.graphstart app.graphend];
                 app.UIAxesDR.XLim = [app.graphstart app.graphend];
                 app.UIAxesSpiketrain.YLim = [-0.05 1.5];
+                app.UIAxesSIL.XLim = [app.graphstart app.graphend];
+                app.UIAxesSIL.YLim = [0.5 1];
             end
         end
 
@@ -860,103 +1076,18 @@ classdef MUedit_exported < matlab.apps.AppBase
             end
         end
 
-        % Button pushed function: ReevaluatewithoutwhiteningButton
-        function ReevaluatewithoutwhiteningButtonPushed(app, event)
+        % Button pushed function: UpdateMUfilterButton
+        function UpdateMUfilterButtonPushed(app, event)
             C = strsplit(app.MUdisplayedDropDown.Value,'_');
             app.Backup.Pulsetrain = app.MUedition.edition.Pulsetrain{str2double(C{2})}(str2double(C{4}), :);
             app.Backup.Dischargetimes = app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})};
 
             % Update MU filter
-            nbextchan = 1500;
+            nbextchan = 1000;
             idx = find(app.MUedition.edition.time > app.graphstart & app.MUedition.edition.time < app.graphend);
-            EMG = app.MUedition.signal.data((str2double(C{2})-1)*app.MUedition.parameters.nbelectrodes+1:(str2double(C{2})-1)*app.MUedition.parameters.nbelectrodes+length(app.MUedition.signal.EMGmask{str2double(C{2})}),:);
+            EMG = app.MUedition.signal.data(app.MUedition.edition.arraynb==str2double(C{2}),:);
             EMG = EMG(app.MUedition.signal.EMGmask{str2double(C{2})}==0,idx);
-            EMG = bandpassingals(EMG, app.MUedition.signal.fsamp, 1);
-            spikes1 = intersect(idx(round(0.1*app.MUedition.signal.fsamp):end-round(0.1*app.MUedition.signal.fsamp)),app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})});
-            spikes2 = (spikes1 - idx(1));
-            exFactor1 = round(nbextchan/size(EMG,1));
-            eSIG = extend(EMG,exFactor1);
-            ReSIG = eSIG*eSIG'/length(eSIG);
-            iReSIGt = pinv(ReSIG);
-            MUFilters = sum(eSIG(:,spikes2),2);
-
-            Pt = (MUFilters'*iReSIGt)*eSIG; % Update the pulse train
-            Pt= Pt(1:size(EMG,2));
-            Pt([1:round(0.1*app.MUedition.signal.fsamp) end-round(0.1*app.MUedition.signal.fsamp):end]) = 0; % Remove the edges
-            Pt = Pt .* abs(Pt); % Normalized and update the pulse train
-            [~,spikes] = findpeaks(Pt,'MinPeakDistance', round(app.MUedition.signal.fsamp*0.005)); % Peak detection
-            Pt = Pt/mean(maxk(Pt(spikes),10));
-
-            [L,C2] = kmeans(Pt(spikes)',2); % Kmean classification
-            [~, idx2] = max(C2); % Find the class with the highest centroid
-            spikes2 = spikes(L==idx2);
-            spikes2(Pt(spikes2)>mean(Pt(spikes2))+3*std(Pt(spikes2))) = []; % remove the outliers of the pulse train for the calculation of the filter
-             
-            if app.Backup.lock == 1
-                spikeso = spikes1 - idx(1);
-                for i = 1:length(spikeso)
-                   [~, imax] = max(Pt(spikeso(i) - 10: spikeso(i) + 10));
-                   spikeso(i) = spikeso(i) + imax - 11;
-                end
-                spikes2 = setdiff(spikes2, spikeso);
-                spikes2 = [spikes2, spikeso];
-                app.Backup.lock = 0;
-                app.LockspikesButton.BackgroundColor = [0.15,0.15,0.15];
-            end
-
-            app.MUedition.edition.Pulsetrain{str2double(C{2})}(str2double(C{4}),idx(1)+round(0.1*app.MUedition.signal.fsamp)-1:idx(end)-round(0.1*app.MUedition.signal.fsamp)) = Pt(round(0.1*app.MUedition.signal.fsamp):end-round(0.1*app.MUedition.signal.fsamp));
-            app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})} = setdiff(app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})},spikes1);
-            app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})} = [app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})}, spikes2 + idx(1) - 1];
-            app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})} = sort(app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})});
-
-            oldsil = app.MUedition.edition.silval{str2double(C{2}),str2double(C{4})};
-            app.MUedition.edition.silval{str2double(C{2}),str2double(C{4})} = getsil(app.MUedition.edition.Pulsetrain{str2double(C{2})}(str2double(C{4}),:), app.MUedition.signal.fsamp);
-            app.EditField_2.Value = ['SIL = ' num2str(app.MUedition.edition.silval{str2double(C{2}),str2double(C{4})})];
-            
-            plot(app.UIAxesSpiketrain, app.MUedition.edition.time, app.MUedition.edition.Pulsetrain{str2double(C{2})}(str2double(C{4}),:), 'Color', [0.9412 0.9412 0.9412], 'LineWidth', 1);
-            hold(app.UIAxesSpiketrain, 'on')
-            plot(app.UIAxesSpiketrain, app.MUedition.edition.time, app.MUedition.signal.target/max(app.MUedition.signal.target), '--', 'LineWidth', 1, 'Color', [0.9412 0.9412 0.9412]);
-            
-            % Color code based one the change in SIL value
-            if (oldsil - app.MUedition.edition.silval{str2double(C{2}),str2double(C{4})}) > 4
-                plot(app.UIAxesSpiketrain, app.MUedition.edition.time(app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})}), app.MUedition.edition.Pulsetrain{str2double(C{2})}(str2double(C{4}),app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})}), 'o', 'LineWidth', 1, 'MarkerSize', 10, 'Color', [0.6350 0.0780 0.1840]);
-            elseif (oldsil - app.MUedition.edition.silval{str2double(C{2}),str2double(C{4})}) > 2 && (oldsil - app.MUedition.edition.silval{str2double(C{2}),str2double(C{4})}) < 4
-                plot(app.UIAxesSpiketrain, app.MUedition.edition.time(app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})}), app.MUedition.edition.Pulsetrain{str2double(C{2})}(str2double(C{4}),app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})}), 'o', 'LineWidth', 1, 'MarkerSize', 10, 'Color', [0.8500 0.3250 0.0980]);
-            elseif (oldsil - app.MUedition.edition.silval{str2double(C{2}),str2double(C{4})}) > 0 && (oldsil - app.MUedition.edition.silval{str2double(C{2}),str2double(C{4})}) < 2
-                plot(app.UIAxesSpiketrain, app.MUedition.edition.time(app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})}), app.MUedition.edition.Pulsetrain{str2double(C{2})}(str2double(C{4}),app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})}), 'o', 'LineWidth', 1, 'MarkerSize', 10, 'Color', [0.3010 0.7450 0.9330]);
-            else
-                plot(app.UIAxesSpiketrain, app.MUedition.edition.time(app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})}), app.MUedition.edition.Pulsetrain{str2double(C{2})}(str2double(C{4}),app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})}), 'o', 'LineWidth', 1, 'MarkerSize', 10, 'Color', [0.4660 0.6740 0.1880]);
-            end
-            hold(app.UIAxesSpiketrain, 'off')
-
-            distime1 = zeros(1, length(app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})})-1);
-            for i = 1:length(app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})})-1
-                distime1(i) = (round((app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})}(i+1) - app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})}(i)) / 2) + app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})}(i)) / app.MUedition.signal.fsamp;
-            end
-
-            if ~isempty(distime1)
-                DR1 = 1./((diff(app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})}))/app.MUedition.signal.fsamp);
-                plot(app.UIAxesDR, distime1, DR1, 'o', 'LineWidth', 1.5, 'MarkerSize', 10, 'Color', [0.9412 0.9412 0.9412]);
-                app.UIAxesDR.YLim = [0 max(DR1)*1.5];
-            end
-
-            app.UIAxesSpiketrain.XLim = [app.graphstart app.graphend];
-            app.UIAxesSpiketrain.YLim = [-0.05 1.5];
-            app.UIAxesDR.XLim = [app.graphstart app.graphend];
-        end
-
-        % Button pushed function: ReevaluatewithwhiteningButton
-        function ReevaluatewithwhiteningButtonPushed(app, event)
-            C = strsplit(app.MUdisplayedDropDown.Value,'_');
-            app.Backup.Pulsetrain = app.MUedition.edition.Pulsetrain{str2double(C{2})}(str2double(C{4}), :);
-            app.Backup.Dischargetimes = app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})};
-
-            % Update MU filter
-            nbextchan = 1500;
-            idx = find(app.MUedition.edition.time > app.graphstart & app.MUedition.edition.time < app.graphend);
-            EMG = app.MUedition.signal.data((str2double(C{2})-1)*app.MUedition.parameters.nbelectrodes+1:(str2double(C{2})-1)*app.MUedition.parameters.nbelectrodes+length(app.MUedition.signal.EMGmask{str2double(C{2})}),:);
-            EMG = EMG(app.MUedition.signal.EMGmask{str2double(C{2})}==0,idx);
-            EMG = bandpassingals(EMG, app.MUedition.signal.fsamp, 1);
+            EMG = bandpassingals(EMG, app.MUedition.signal.fsamp, app.MUedition.signal.emgtype(str2double(C{2})));
             spikes1 = intersect(idx(round(0.1*app.MUedition.signal.fsamp):end-round(0.1*app.MUedition.signal.fsamp)),app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})});
             spikes2 = (spikes1 - idx(1));
             exFactor1 = round(nbextchan/size(EMG,1));
@@ -998,18 +1129,27 @@ classdef MUedit_exported < matlab.apps.AppBase
 
             oldsil = app.MUedition.edition.silval{str2double(C{2}),str2double(C{4})};
             app.MUedition.edition.silval{str2double(C{2}),str2double(C{4})} = getsil(app.MUedition.edition.Pulsetrain{str2double(C{2})}(str2double(C{4}),:), app.MUedition.signal.fsamp);
+            app.MUedition.edition.silvalcon{str2double(C{2}),str2double(C{4})} = refinesil(app.MUedition.edition.Pulsetrain{str2double(C{2})}(str2double(C{4}),:), app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})}, app.MUedition.signal.fsamp);
+
             app.EditField_2.Value = ['SIL = ' num2str(app.MUedition.edition.silval{str2double(C{2}),str2double(C{4})})];
+
+            if app.SILCheckBox.Value == 1
+                bar(app.UIAxesSIL, app.MUedition.edition.time(app.MUedition.edition.silvalcon{str2double(C{2}),str2double(C{4})}(:,1)), app.MUedition.edition.silvalcon{str2double(C{2}),str2double(C{4})}(:,2), 'EdgeColor', [0.9412 0.9412 0.9412], 'FaceColor', [0.15 0.15 0.15]);
+                yline(app.UIAxesSIL, 0.9, 'LineWidth', 2, 'Color', [0.4660 0.6740 0.1880]);
+                app.UIAxesSIL.XAxis.Visible = 'Off';
+                app.UIAxesSIL.YColor = [0.9412 0.9412 0.9412];
+            end
 
             plot(app.UIAxesSpiketrain, app.MUedition.edition.time, app.MUedition.edition.Pulsetrain{str2double(C{2})}(str2double(C{4}),:), 'Color', [0.9412 0.9412 0.9412], 'LineWidth', 1);
             hold(app.UIAxesSpiketrain, 'on')
             plot(app.UIAxesSpiketrain, app.MUedition.edition.time, app.MUedition.signal.target/max(app.MUedition.signal.target), '--', 'LineWidth', 1, 'Color', [0.9412 0.9412 0.9412]);
 
             % Color code based one the change in SIL value
-            if (oldsil - app.MUedition.edition.silval{str2double(C{2}),str2double(C{4})}) > 4
+            if (oldsil - app.MUedition.edition.silval{str2double(C{2}),str2double(C{4})}) > 0.04
                 plot(app.UIAxesSpiketrain, app.MUedition.edition.time(app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})}), app.MUedition.edition.Pulsetrain{str2double(C{2})}(str2double(C{4}),app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})}), 'o', 'LineWidth', 1, 'MarkerSize', 10, 'Color', [0.6350 0.0780 0.1840]);
-            elseif (oldsil - app.MUedition.edition.silval{str2double(C{2}),str2double(C{4})}) > 2 && (oldsil - app.MUedition.edition.silval{str2double(C{2}),str2double(C{4})}) < 4
+            elseif (oldsil - app.MUedition.edition.silval{str2double(C{2}),str2double(C{4})}) > 0.02 && (oldsil - app.MUedition.edition.silval{str2double(C{2}),str2double(C{4})}) < 0.04
                 plot(app.UIAxesSpiketrain, app.MUedition.edition.time(app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})}), app.MUedition.edition.Pulsetrain{str2double(C{2})}(str2double(C{4}),app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})}), 'o', 'LineWidth', 1, 'MarkerSize', 10, 'Color', [0.8500 0.3250 0.0980]);
-            elseif (oldsil - app.MUedition.edition.silval{str2double(C{2}),str2double(C{4})}) > 0 && (oldsil - app.MUedition.edition.silval{str2double(C{2}),str2double(C{4})}) < 2
+            elseif (oldsil - app.MUedition.edition.silval{str2double(C{2}),str2double(C{4})}) > 0 && (oldsil - app.MUedition.edition.silval{str2double(C{2}),str2double(C{4})}) < 0.02
                 plot(app.UIAxesSpiketrain, app.MUedition.edition.time(app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})}), app.MUedition.edition.Pulsetrain{str2double(C{2})}(str2double(C{4}),app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})}), 'o', 'LineWidth', 1, 'MarkerSize', 10, 'Color', [0.3010 0.7450 0.9330]);
             else
                 plot(app.UIAxesSpiketrain, app.MUedition.edition.time(app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})}), app.MUedition.edition.Pulsetrain{str2double(C{2})}(str2double(C{4}),app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})}), 'o', 'LineWidth', 1, 'MarkerSize', 10, 'Color', [0.4660 0.6740 0.1880]);
@@ -1030,6 +1170,111 @@ classdef MUedit_exported < matlab.apps.AppBase
             app.UIAxesSpiketrain.XLim = [app.graphstart app.graphend];
             app.UIAxesSpiketrain.YLim = [-0.05 1.5];
             app.UIAxesDR.XLim = [app.graphstart app.graphend];
+            app.UIAxesSIL.XLim = [app.graphstart app.graphend];
+            app.UIAxesSIL.YLim = [0.5 1];
+
+        end
+
+        % Button pushed function: ExtendMUfilter
+        function ExtendMUfilterPushed(app, event)
+            C = strsplit(app.MUdisplayedDropDown.Value,'_');
+            app.Backup.Pulsetrain = app.MUedition.edition.Pulsetrain{str2double(C{2})}(str2double(C{4}), :);
+            app.Backup.Dischargetimes = app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})};
+
+            % Get the indexes of the current window
+            idx = find(app.MUedition.edition.time > app.graphstart & app.MUedition.edition.time < app.graphend);
+            step = floor(length(idx)/2);
+
+            % Zoom out on both plots
+            app.graphstart = app.MUedition.edition.time(1);
+            app.graphend = app.MUedition.edition.time(end);
+            app.UIAxesSpiketrain.XLim = [app.graphstart app.graphend];
+            app.UIAxesDR.XLim = [app.graphstart app.graphend];
+            app.UIAxesSpiketrain.YLim = [-0.05 1.5];
+            app.UIAxesSIL.XLim = [app.graphstart app.graphend];
+            app.UIAxesSIL.YLim = [0.5 1];
+
+            % Extend MU filters
+            % Move forward
+            idx1 = idx;
+            for j = 1:ceil((length(app.MUedition.edition.Pulsetrain{str2double(C{2})}(str2double(C{4}),:))-idx(end))/step)
+                idx1 = idx1+step;
+                idx1(idx1>length(app.MUedition.edition.Pulsetrain{str2double(C{2})}(str2double(C{4}),:))) = [];
+                [app.MUedition.edition.Pulsetrain{str2double(C{2})}(str2double(C{4}),:), app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})}] = extendfilter(app.MUedition.signal.data(app.MUedition.edition.arraynb==str2double(C{2}),:), app.MUedition.signal.EMGmask{str2double(C{2})}, app.MUedition.edition.Pulsetrain{str2double(C{2})}(str2double(C{4}),:), app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})}, idx1, app.MUedition.signal.fsamp, app.MUedition.signal.emgtype(str2double(C{2})));
+                % Update graph
+                plot(app.UIAxesSpiketrain, app.MUedition.edition.time, app.MUedition.edition.Pulsetrain{str2double(C{2})}(str2double(C{4}),:), 'Color', [0.9412 0.9412 0.9412], 'LineWidth', 1);
+                hold(app.UIAxesSpiketrain, 'on')
+                plot(app.UIAxesSpiketrain, app.MUedition.edition.time, app.MUedition.signal.target/max(app.MUedition.signal.target), '--', 'LineWidth', 1, 'Color', [0.9412 0.9412 0.9412]);
+                plot(app.UIAxesSpiketrain, app.MUedition.edition.time(app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})}), app.MUedition.edition.Pulsetrain{str2double(C{2})}(str2double(C{4}),app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})}), 'o', 'LineWidth', 1, 'MarkerSize', 10, 'Color', [0.85 0.33 0.10]);
+                hold(app.UIAxesSpiketrain, 'off')
+                app.UIAxesSpiketrain.XLim = [app.graphstart app.graphend];
+                app.UIAxesSpiketrain.YLim = [-0.05 1.5];
+                drawnow
+            end
+            
+            % Move backward
+            idx1 = idx;
+            for j = 1:ceil(idx(1)/step)
+                idx1 = idx1-step;
+                idx1(idx1<1) = [];
+                [app.MUedition.edition.Pulsetrain{str2double(C{2})}(str2double(C{4}),:), app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})}] = extendfilter(app.MUedition.signal.data(app.MUedition.edition.arraynb==str2double(C{2}),:), app.MUedition.signal.EMGmask{str2double(C{2})}, app.MUedition.edition.Pulsetrain{str2double(C{2})}(str2double(C{4}),:), app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})}, idx1, app.MUedition.signal.fsamp, app.MUedition.signal.emgtype(str2double(C{2})));
+                % Update graph
+                plot(app.UIAxesSpiketrain, app.MUedition.edition.time, app.MUedition.edition.Pulsetrain{str2double(C{2})}(str2double(C{4}),:), 'Color', [0.9412 0.9412 0.9412], 'LineWidth', 1);
+                hold(app.UIAxesSpiketrain, 'on')
+                plot(app.UIAxesSpiketrain, app.MUedition.edition.time, app.MUedition.signal.target/max(app.MUedition.signal.target), '--', 'LineWidth', 1, 'Color', [0.9412 0.9412 0.9412]);
+                plot(app.UIAxesSpiketrain, app.MUedition.edition.time(app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})}), app.MUedition.edition.Pulsetrain{str2double(C{2})}(str2double(C{4}),app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})}), 'o', 'LineWidth', 1, 'MarkerSize', 10, 'Color', [0.85 0.33 0.10]);
+                hold(app.UIAxesSpiketrain, 'off')
+                app.UIAxesSpiketrain.XLim = [app.graphstart app.graphend];
+                app.UIAxesSpiketrain.YLim = [-0.05 1.5];
+                drawnow
+            end
+
+            oldsil = app.MUedition.edition.silval{str2double(C{2}),str2double(C{4})};
+            app.MUedition.edition.silval{str2double(C{2}),str2double(C{4})} = getsil(app.MUedition.edition.Pulsetrain{str2double(C{2})}(str2double(C{4}),:), app.MUedition.signal.fsamp);
+            app.MUedition.edition.silvalcon{str2double(C{2}),str2double(C{4})} = refinesil(app.MUedition.edition.Pulsetrain{str2double(C{2})}(str2double(C{4}),:), app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})}, app.MUedition.signal.fsamp);
+
+            app.EditField_2.Value = ['SIL = ' num2str(app.MUedition.edition.silval{str2double(C{2}),str2double(C{4})})];
+            
+            if app.SILCheckBox.Value == 1
+                bar(app.UIAxesSIL, app.MUedition.edition.time(app.MUedition.edition.silvalcon{str2double(C{2}),str2double(C{4})}(:,1)), app.MUedition.edition.silvalcon{str2double(C{2}),str2double(C{4})}(:,2), 'EdgeColor', [0.9412 0.9412 0.9412], 'FaceColor', [0.15 0.15 0.15]);
+                yline(app.UIAxesSIL, 0.9, 'LineWidth', 2, 'Color', [0.4660 0.6740 0.1880]);
+                app.UIAxesSIL.XAxis.Visible = 'Off';
+                app.UIAxesSIL.YColor = [0.9412 0.9412 0.9412];
+            end
+
+            plot(app.UIAxesSpiketrain, app.MUedition.edition.time, app.MUedition.edition.Pulsetrain{str2double(C{2})}(str2double(C{4}),:), 'Color', [0.9412 0.9412 0.9412], 'LineWidth', 1);
+            hold(app.UIAxesSpiketrain, 'on')
+            plot(app.UIAxesSpiketrain, app.MUedition.edition.time, app.MUedition.signal.target/max(app.MUedition.signal.target), '--', 'LineWidth', 1, 'Color', [0.9412 0.9412 0.9412]);
+            
+            % Color code based one the change in SIL value
+            if (oldsil - app.MUedition.edition.silval{str2double(C{2}),str2double(C{4})}) > 0.04
+                plot(app.UIAxesSpiketrain, app.MUedition.edition.time(app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})}), app.MUedition.edition.Pulsetrain{str2double(C{2})}(str2double(C{4}),app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})}), 'o', 'LineWidth', 1, 'MarkerSize', 10, 'Color', [0.6350 0.0780 0.1840]);
+            elseif (oldsil - app.MUedition.edition.silval{str2double(C{2}),str2double(C{4})}) > 0.02 && (oldsil - app.MUedition.edition.silval{str2double(C{2}),str2double(C{4})}) < 0.04
+                plot(app.UIAxesSpiketrain, app.MUedition.edition.time(app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})}), app.MUedition.edition.Pulsetrain{str2double(C{2})}(str2double(C{4}),app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})}), 'o', 'LineWidth', 1, 'MarkerSize', 10, 'Color', [0.8500 0.3250 0.0980]);
+            elseif (oldsil - app.MUedition.edition.silval{str2double(C{2}),str2double(C{4})}) > 0 && (oldsil - app.MUedition.edition.silval{str2double(C{2}),str2double(C{4})}) < 0.02
+                plot(app.UIAxesSpiketrain, app.MUedition.edition.time(app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})}), app.MUedition.edition.Pulsetrain{str2double(C{2})}(str2double(C{4}),app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})}), 'o', 'LineWidth', 1, 'MarkerSize', 10, 'Color', [0.3010 0.7450 0.9330]);
+            else
+                plot(app.UIAxesSpiketrain, app.MUedition.edition.time(app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})}), app.MUedition.edition.Pulsetrain{str2double(C{2})}(str2double(C{4}),app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})}), 'o', 'LineWidth', 1, 'MarkerSize', 10, 'Color', [0.4660 0.6740 0.1880]);
+            end
+            hold(app.UIAxesSpiketrain, 'off')
+
+            distime1 = zeros(1, length(app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})})-1);
+            for i = 1:length(app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})})-1
+                distime1(i) = (round((app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})}(i+1) - app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})}(i)) / 2) + app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})}(i)) / app.MUedition.signal.fsamp;
+            end
+
+            if ~isempty(distime1)
+                DR1 = 1./((diff(app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})}))/app.MUedition.signal.fsamp);
+                plot(app.UIAxesDR, distime1, DR1, 'o', 'LineWidth', 1.5, 'MarkerSize', 10, 'Color', [0.9412 0.9412 0.9412]);
+                app.UIAxesDR.YLim = [0 max(DR1)*1.5];
+            end
+
+            app.UIAxesSpiketrain.XLim = [app.graphstart app.graphend];
+            app.UIAxesSpiketrain.YLim = [-0.05 1.5];
+            app.UIAxesDR.XLim = [app.graphstart app.graphend];
+            app.UIAxesSIL.XLim = [app.graphstart app.graphend];
+            app.UIAxesSIL.YLim = [0.5 1];
+
         end
 
         % Button pushed function: RemovealltheoutliersButton
@@ -1043,7 +1288,7 @@ classdef MUedit_exported < matlab.apps.AppBase
             for f = 1:app.MUedition.signal.ngrid
                 for mu = 1:size(app.MUedition.edition.Pulsetrain{f},1)
                     ite = ite + 1;
-                    waitbar(ite/itetot, fwb,['Removing outliers for Grid#' num2str(f) ' _MU#' num2str(mu)])
+                    waitbar(ite/itetot, fwb,['Removing outliers for Array#' num2str(f) ' _MU#' num2str(mu)])
                     
                     distime = zeros(1, length(app.MUedition.edition.Dischargetimes{f,mu})-1);
                     for i = 1:length(app.MUedition.edition.Dischargetimes{f,mu})-1
@@ -1101,12 +1346,12 @@ classdef MUedit_exported < matlab.apps.AppBase
             app.UIAxesDR.YLim = [0 max(DR1)*1.5];
         end
 
-        % Button pushed function: ReevaluateallMUfiltersButton
-        function ReevaluateallMUfiltersButtonPushed(app, event)
+        % Button pushed function: UpdateallMUfiltersButton
+        function UpdateallMUfiltersButtonPushed(app, event)
             C = strsplit(app.MUdisplayedDropDown.Value,'_');
             
             % Update MU filter
-            nbextchan = 1500;
+            nbextchan = 1000;
             fwb = waitbar(0, 'Starting batch processing');
             ite = 0;
             itetot = 0;
@@ -1114,7 +1359,7 @@ classdef MUedit_exported < matlab.apps.AppBase
                 itetot = itetot + size(app.MUedition.edition.Pulsetrain{f},1);
             end
             for f = 1:app.MUedition.signal.ngrid
-                EMG = app.MUedition.signal.data((f-1)*app.MUedition.parameters.nbelectrodes+1:(f-1)*app.MUedition.parameters.nbelectrodes+length(app.MUedition.signal.EMGmask{f}),:);
+                EMG = app.MUedition.signal.data(app.MUedition.edition.arraynb==f,:);
                 EMG = EMG(app.MUedition.signal.EMGmask{f}==0,:);
                 exFactor1 = round(nbextchan/size(EMG,1));
                 eSIG = extend(EMG,exFactor1);
@@ -1123,7 +1368,7 @@ classdef MUedit_exported < matlab.apps.AppBase
 
                 for mu = 1:size(app.MUedition.edition.Pulsetrain{f},1)
                     ite = ite + 1;
-                    waitbar(ite/itetot, fwb,['Recalculating filter for Grid#' num2str(f) ' MU#' num2str(mu)])
+                    waitbar(ite/itetot, fwb,['Recalculating filter for Array#' num2str(f) ' MU#' num2str(mu)])
 
                     if length(app.MUedition.edition.Dischargetimes{f,mu})>2
                         MUFilters = sum(eSIG(:,app.MUedition.edition.Dischargetimes{f,mu}),2);
@@ -1136,13 +1381,13 @@ classdef MUedit_exported < matlab.apps.AppBase
                         [~, idx2] = max(C2); % Find the class with the highest centroid
                         spikes2 = spikes(L==idx2);
                         spikes2(Pt(spikes2)>mean(Pt(spikes2))+3*std(Pt(spikes2))) = []; % remove the outliers of the pulse train for the calculation of the filter
-
-                        app.EditField_2.Value = ['SIL = ' num2str(app.MUedition.edition.silval{str2double(C{2}),str2double(C{4})})];
             
                         app.MUedition.edition.Pulsetrain{f}(mu,:) = Pt;
                         app.MUedition.edition.Dischargetimes{f,mu} = [];
                         app.MUedition.edition.Dischargetimes{f,mu} = spikes2;
                         app.MUedition.edition.silval{f,mu} = getsil(app.MUedition.edition.Pulsetrain{f}(mu,:), app.MUedition.signal.fsamp);
+                        app.MUedition.edition.silvalcon{f,mu} = refinesil(app.MUedition.edition.Pulsetrain{f}(mu,:), app.MUedition.edition.Dischargetimes{f,mu}, app.MUedition.signal.fsamp);
+
                         clearvars Pt MUFilters spikest
                     end
                 end
@@ -1158,6 +1403,13 @@ classdef MUedit_exported < matlab.apps.AppBase
 
             app.EditField_2.Value = ['SIL = ' num2str(app.MUedition.edition.silval{str2double(C{2}),str2double(C{4})})];
 
+            if app.SILCheckBox.Value == 1
+                bar(app.UIAxesSIL, app.MUedition.edition.time(app.MUedition.edition.silvalcon{str2double(C{2}),str2double(C{4})}(:,1)), app.MUedition.edition.silvalcon{str2double(C{2}),str2double(C{4})}(:,2), 'EdgeColor', [0.9412 0.9412 0.9412], 'FaceColor', [0.15 0.15 0.15]);
+                yline(app.UIAxesSIL, 0.9, 'LineWidth', 2, 'Color', [0.4660 0.6740 0.1880]);
+                app.UIAxesSIL.XAxis.Visible = 'Off';
+                app.UIAxesSIL.YColor = [0.9412 0.9412 0.9412];
+            end
+
             distime1 = zeros(1, length(app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})})-1);
             for i = 1:length(app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})})-1
                 distime1(i) = (round((app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})}(i+1) - app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})}(i)) / 2) + app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})}(i)) / app.MUedition.signal.fsamp;
@@ -1171,6 +1423,9 @@ classdef MUedit_exported < matlab.apps.AppBase
             app.UIAxesSpiketrain.YLim = [-0.05 1.5];
             app.UIAxesSpiketrain.XLim = [app.graphstart app.graphend];
             app.UIAxesDR.XLim = [app.graphstart app.graphend];
+            app.UIAxesSIL.XLim = [app.graphstart app.graphend];
+            app.UIAxesSIL.YLim = [0.5 1];
+
         end
 
         % Button pushed function: RemoveflaggedMUButton
@@ -1188,24 +1443,34 @@ classdef MUedit_exported < matlab.apps.AppBase
                 app.MUedition.edition.Distimeclean{i} = {};
                 for j = 1:size(app.MUedition.edition.Pulsetrain{i},1)
                     app.MUedition.edition.Distimeclean{i}{j} = app.MUedition.edition.Dischargetimes{i,j};
+                    app.MUedition.edition.silvalclean{i}{j} = app.MUedition.edition.silval{i,j};
+                    app.MUedition.edition.silvalconclean{i}{j} = app.MUedition.edition.silvalcon{i,j};
                 end
                 for j = 1:size(app.MUedition.edition.Pulsetrain{i},1)
                     idx = size(app.MUedition.edition.Pulsetrain{i},1)+1-j;
                     if length(app.MUedition.edition.Dischargetimes{i,idx}) == 2 && mean(app.MUedition.edition.Pulsetrain{i}(idx,:)) == 0
                         app.MUedition.edition.Distimeclean{i}{idx} = [];
+                        app.MUedition.edition.silvalclean{i}{idx} = [];
+                        app.MUedition.edition.silvalconclean{i}{idx} = [];
                         app.MUedition.edition.Pulsetrainclean{i}(idx,:) = [];
                     end
                     ite = ite + 1;
-                    waitbar(ite/itetot, fwb,['Checking flagged units for Grid#' num2str(i) ' _MU#' num2str(j)])
+                    waitbar(ite/itetot, fwb,['Checking flagged units for Array#' num2str(i) ' _MU#' num2str(j)])
                 end
                 app.MUedition.edition.Distimeclean{i} = app.MUedition.edition.Distimeclean{i}(~cellfun('isempty',app.MUedition.edition.Distimeclean{i}));
+                app.MUedition.edition.silvalclean{i} = app.MUedition.edition.silvalclean{i}(~cellfun('isempty',app.MUedition.edition.silvalclean{i}));
+                app.MUedition.edition.silvalconclean{i} = app.MUedition.edition.silvalconclean{i}(~cellfun('isempty',app.MUedition.edition.silvalconclean{i}));
             end
 
             app.MUedition.edition.Dischargetimes = {};
+            app.MUedition.edition.silval = {};
+            app.MUedition.edition.silvalcon = {};
             for i = 1:size(app.MUedition.edition.Pulsetrain,2)
                 app.MUedition.edition.Pulsetrain{i} = app.MUedition.edition.Pulsetrainclean{i};
                 for j = 1:size(app.MUedition.edition.Pulsetrain{i},1)
                     app.MUedition.edition.Dischargetimes{i,j} = app.MUedition.edition.Distimeclean{i}{j};
+                    app.MUedition.edition.silval{i,j} = app.MUedition.edition.silvalclean{i}{j};
+                    app.MUedition.edition.silvalcon{i,j} = app.MUedition.edition.silvalconclean{i}{j};
                 end
             end
 
@@ -1213,28 +1478,48 @@ classdef MUedit_exported < matlab.apps.AppBase
             for i = 1:size(app.MUedition.edition.Pulsetrain,2)
                 % Update the list and load the edited files
                 for j = 1:size(app.MUedition.edition.Pulsetrain{i},1)
-                    app.MUdisplayedDropDown.Items = horzcat(app.MUdisplayedDropDown.Items, {['Grid_', num2str(i), '_MU_' , num2str(j)]});
+                    app.MUdisplayedDropDown.Items = horzcat(app.MUdisplayedDropDown.Items, {['Array_', num2str(i), '_MU_' , num2str(j)]});
                 end
+                app.MUdisplayedDropDown.Value = app.MUdisplayedDropDown.Items{1};
             end
 
-            % Update the graph
-            plot(app.UIAxesSpiketrain, app.MUedition.edition.time, app.MUedition.edition.Pulsetrain{1}(1,:), 'Color', [0.9412 0.9412 0.9412], 'LineWidth', 1);
-            hold(app.UIAxesSpiketrain, 'on')
-            plot(app.UIAxesSpiketrain, app.MUedition.edition.time, app.MUedition.signal.target/max(app.MUedition.signal.target), '--', 'LineWidth', 1, 'Color', [0.9412 0.9412 0.9412]);
-            plot(app.UIAxesSpiketrain, app.MUedition.edition.time(app.MUedition.edition.Dischargetimes{1,1}), app.MUedition.edition.Pulsetrain{1}(1,app.MUedition.edition.Dischargetimes{1,1}), 'o', 'LineWidth', 1, 'MarkerSize', 10, 'Color', [0.85 0.33 0.10]);
-            hold(app.UIAxesSpiketrain, 'off')
 
-            distime1 = zeros(1, length(app.MUedition.edition.Dischargetimes{1,1})-1);
-            for i = 1:length(app.MUedition.edition.Dischargetimes{1,1})-1
-                distime1(i) = (round((app.MUedition.edition.Dischargetimes{1,1}(i+1) - app.MUedition.edition.Dischargetimes{1,1}(i)) / 2) + app.MUedition.edition.Dischargetimes{1,1}(i)) / app.MUedition.signal.fsamp;
+            if ~isempty(app.MUdisplayedDropDown.Items)
+                C = strsplit(app.MUdisplayedDropDown.Value,'_');
+                % Update the graph
+                app.EditField_2.Value = ['SIL = ' num2str(app.MUedition.edition.silval{str2double(C{2}),str2double(C{4})})];
+
+                if app.SILCheckBox.Value == 1
+                    bar(app.UIAxesSIL, app.MUedition.edition.time(app.MUedition.edition.silvalcon{str2double(C{2}),str2double(C{4})}(:,1)), app.MUedition.edition.silvalcon{str2double(C{2}),str2double(C{4})}(:,2), 'EdgeColor', [0.9412 0.9412 0.9412], 'FaceColor', [0.15 0.15 0.15]);
+                    yline(app.UIAxesSIL, 0.9, 'LineWidth', 2, 'Color', [0.4660 0.6740 0.1880]);
+                    app.UIAxesSIL.XAxis.Visible = 'Off';
+                    app.UIAxesSIL.YColor = [0.9412 0.9412 0.9412];
+                end
+
+                plot(app.UIAxesSpiketrain, app.MUedition.edition.time, app.MUedition.edition.Pulsetrain{str2double(C{2})}(str2double(C{4}),:), 'Color', [0.9412 0.9412 0.9412], 'LineWidth', 1);
+                hold(app.UIAxesSpiketrain, 'on')
+                plot(app.UIAxesSpiketrain, app.MUedition.edition.time, app.MUedition.signal.target/max(app.MUedition.signal.target), '--', 'LineWidth', 1, 'Color', [0.9412 0.9412 0.9412]);
+                plot(app.UIAxesSpiketrain, app.MUedition.edition.time(app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})}), app.MUedition.edition.Pulsetrain{str2double(C{2})}(str2double(C{4}),app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})}), 'o', 'LineWidth', 1, 'MarkerSize', 10, 'Color', [0.85 0.33 0.10]);
+                hold(app.UIAxesSpiketrain, 'off')
+    
+                distime1 = zeros(1, length(app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})})-1);
+                for i = 1:length(app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})})-1
+                    distime1(i) = (round((app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})}(i+1) - app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})}(i)) / 2) + app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})}(i)) / app.MUedition.signal.fsamp;
+                end
+                DR1 = 1./((diff(app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})}))/app.MUedition.signal.fsamp);
+                plot(app.UIAxesDR, distime1, DR1, 'o', 'LineWidth', 1.5, 'MarkerSize', 10, 'Color', [0.9412 0.9412 0.9412]);
+    
+                app.UIAxesSpiketrain.YLim = [-0.05 1.5];
+                app.UIAxesSpiketrain.XLim = [app.graphstart app.graphend];
+                app.UIAxesDR.XLim = [app.graphstart app.graphend];
+                app.UIAxesDR.YLim = [0 max(DR1)*1.5];
+            else
+                plot(app.UIAxesSpiketrain, app.MUedition.edition.time, zeros(length(app.MUedition.edition.time),1), 'Color', [0.9412 0.9412 0.9412], 'LineWidth', 1);
+                plot(app.UIAxesDR, app.MUedition.edition.time, zeros(length(app.MUedition.edition.time),1), 'Color', [0.9412 0.9412 0.9412], 'LineWidth', 1);
+                app.MUdisplayedDropDown.Items = {'No MUs'};
+                app.MUdisplayedDropDown.Value = 'No MUs';
+                app.EditField_2.Value = 'no SIL ';
             end
-            DR1 = 1./((diff(app.MUedition.edition.Dischargetimes{1,1}))/app.MUedition.signal.fsamp);
-            plot(app.UIAxesDR, distime1, DR1, 'o', 'LineWidth', 1.5, 'MarkerSize', 10, 'Color', [0.9412 0.9412 0.9412]);
-
-            app.UIAxesSpiketrain.YLim = [-0.05 1.5];
-            app.UIAxesSpiketrain.XLim = [app.graphstart app.graphend];
-            app.UIAxesDR.XLim = [app.graphstart app.graphend];
-            app.UIAxesDR.YLim = [0 max(DR1)*1.5];
 
             delete(fwb)
         end
@@ -1251,10 +1536,15 @@ classdef MUedit_exported < matlab.apps.AppBase
             end
 
             app.MUedition.edition.Dischargetimes = {};
+            app.MUedition.edition.silval = {};
+            app.MUedition.edition.silvalcon = {};
+
             for i = 1:size(app.MUedition.edition.Pulsetrain,2)
                 app.MUedition.edition.Pulsetrain{i} = app.MUedition.edition.Pulsetrainclean{i};
                 for j = 1:size(app.MUedition.edition.Pulsetrain{i},1)
                     app.MUedition.edition.Dischargetimes{i,j} = app.MUedition.edition.Distimeclean{i}{j};
+                    app.MUedition.edition.silval{i,j} = getsil(app.MUedition.edition.Pulsetrain{i}(j,:), app.MUedition.signal.fsamp);
+                    app.MUedition.edition.silvalcon{i,j} = refinesil(app.MUedition.edition.Pulsetrain{i}(j,:), app.MUedition.edition.Dischargetimes{i,j}, app.MUedition.signal.fsamp);
                 end
             end
 
@@ -1262,28 +1552,48 @@ classdef MUedit_exported < matlab.apps.AppBase
             for i = 1:size(app.MUedition.edition.Pulsetrain,2)
                 % Update the list and load the edited files
                 for j = 1:size(app.MUedition.edition.Pulsetrain{i},1)
-                    app.MUdisplayedDropDown.Items = horzcat(app.MUdisplayedDropDown.Items, {['Grid_', num2str(i), '_MU_' , num2str(j)]});
+                    app.MUdisplayedDropDown.Items = horzcat(app.MUdisplayedDropDown.Items, {['Array_', num2str(i), '_MU_' , num2str(j)]});
                 end
+                app.MUdisplayedDropDown.Value = app.MUdisplayedDropDown.Items{1};
             end
 
-            % Update the graph
-            plot(app.UIAxesSpiketrain, app.MUedition.edition.time, app.MUedition.edition.Pulsetrain{1}(1,:), 'Color', [0.9412 0.9412 0.9412], 'LineWidth', 1);
-            hold(app.UIAxesSpiketrain, 'on')
-            plot(app.UIAxesSpiketrain, app.MUedition.edition.time, app.MUedition.signal.target/max(app.MUedition.signal.target), '--', 'LineWidth', 1, 'Color', [0.9412 0.9412 0.9412]);
-            plot(app.UIAxesSpiketrain, app.MUedition.edition.time(app.MUedition.edition.Dischargetimes{1,1}), app.MUedition.edition.Pulsetrain{1}(1,app.MUedition.edition.Dischargetimes{1,1}), 'o', 'LineWidth', 1, 'MarkerSize', 10, 'Color', [0.85 0.33 0.10]);
-            hold(app.UIAxesSpiketrain, 'off')
 
-            distime1 = zeros(1, length(app.MUedition.edition.Dischargetimes{1,1})-1);
-            for i = 1:length(app.MUedition.edition.Dischargetimes{1,1})-1
-                distime1(i) = (round((app.MUedition.edition.Dischargetimes{1,1}(i+1) - app.MUedition.edition.Dischargetimes{1,1}(i)) / 2) + app.MUedition.edition.Dischargetimes{1,1}(i)) / app.MUedition.signal.fsamp;
+            if ~isempty(app.MUdisplayedDropDown.Items)
+                C = strsplit(app.MUdisplayedDropDown.Value,'_');
+                % Update the graph
+                app.EditField_2.Value = ['SIL = ' num2str(app.MUedition.edition.silval{str2double(C{2}),str2double(C{4})})];
+
+                if app.SILCheckBox.Value == 1
+                    bar(app.UIAxesSIL, app.MUedition.edition.time(app.MUedition.edition.silvalcon{str2double(C{2}),str2double(C{4})}(:,1)), app.MUedition.edition.silvalcon{str2double(C{2}),str2double(C{4})}(:,2), 'EdgeColor', [0.9412 0.9412 0.9412], 'FaceColor', [0.15 0.15 0.15]);
+                    yline(app.UIAxesSIL, 0.9, 'LineWidth', 2, 'Color', [0.4660 0.6740 0.1880]);
+                    app.UIAxesSIL.XAxis.Visible = 'Off';
+                    app.UIAxesSIL.YColor = [0.9412 0.9412 0.9412];
+                end
+
+                plot(app.UIAxesSpiketrain, app.MUedition.edition.time, app.MUedition.edition.Pulsetrain{str2double(C{2})}(str2double(C{4}),:), 'Color', [0.9412 0.9412 0.9412], 'LineWidth', 1);
+                hold(app.UIAxesSpiketrain, 'on')
+                plot(app.UIAxesSpiketrain, app.MUedition.edition.time, app.MUedition.signal.target/max(app.MUedition.signal.target), '--', 'LineWidth', 1, 'Color', [0.9412 0.9412 0.9412]);
+                plot(app.UIAxesSpiketrain, app.MUedition.edition.time(app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})}), app.MUedition.edition.Pulsetrain{str2double(C{2})}(str2double(C{4}),app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})}), 'o', 'LineWidth', 1, 'MarkerSize', 10, 'Color', [0.85 0.33 0.10]);
+                hold(app.UIAxesSpiketrain, 'off')
+    
+                distime1 = zeros(1, length(app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})})-1);
+                for i = 1:length(app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})})-1
+                    distime1(i) = (round((app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})}(i+1) - app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})}(i)) / 2) + app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})}(i)) / app.MUedition.signal.fsamp;
+                end
+                DR1 = 1./((diff(app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})}))/app.MUedition.signal.fsamp);
+                plot(app.UIAxesDR, distime1, DR1, 'o', 'LineWidth', 1.5, 'MarkerSize', 10, 'Color', [0.9412 0.9412 0.9412]);
+    
+                app.UIAxesSpiketrain.YLim = [-0.05 1.5];
+                app.UIAxesSpiketrain.XLim = [app.graphstart app.graphend];
+                app.UIAxesDR.XLim = [app.graphstart app.graphend];
+                app.UIAxesDR.YLim = [0 max(DR1)*1.5];
+            else
+                plot(app.UIAxesSpiketrain, app.MUedition.edition.time, zeros(length(app.MUedition.edition.time),1), 'Color', [0.9412 0.9412 0.9412], 'LineWidth', 1);
+                plot(app.UIAxesDR, app.MUedition.edition.time, zeros(length(app.MUedition.edition.time),1), 'Color', [0.9412 0.9412 0.9412], 'LineWidth', 1);
+                app.MUdisplayedDropDown.Items = {'No MUs'};
+                app.MUdisplayedDropDown.Value = 'No MUs';
+                app.EditField_2.Value = 'no SIL ';
             end
-            DR1 = 1./((diff(app.MUedition.edition.Dischargetimes{1,1}))/app.MUedition.signal.fsamp);
-            plot(app.UIAxesDR, distime1, DR1, 'o', 'LineWidth', 1.5, 'MarkerSize', 10, 'Color', [0.9412 0.9412 0.9412]);
-
-            app.UIAxesSpiketrain.YLim = [-0.05 1.5];
-            app.UIAxesSpiketrain.XLim = [app.graphstart app.graphend];
-            app.UIAxesDR.XLim = [app.graphstart app.graphend];
-            app.UIAxesDR.YLim = [0 max(DR1)*1.5];
         end
 
         % Button pushed function: RemoveduplicatesbetweengridsButton
@@ -1312,11 +1622,16 @@ classdef MUedit_exported < matlab.apps.AppBase
             
             [PulseT, Distim, muscle] = remduplicatesbgrids(PulseT, Distim, muscle, round(app.MUedition.signal.fsamp/40), 0.00025, app.DuplicatethresholdEditField.Value, app.MUedition.signal.fsamp);
             app.MUedition.edition.Dischargetimes = {};
+            app.MUedition.edition.silval = {};
+            app.MUedition.edition.silvalcon = {};
+
             for i = 1:size(app.MUedition.edition.Pulsetrain,2)
                 idx = find(muscle == i);
                 app.MUedition.edition.Pulsetrain{i} = PulseT(idx,:);
                 for j = 1:size(app.MUedition.edition.Pulsetrain{i},1)
                     app.MUedition.edition.Dischargetimes{i,j} = Distim{idx(j)};
+                    app.MUedition.edition.silval{i,j} = getsil(app.MUedition.edition.Pulsetrain{i}(j,:), app.MUedition.signal.fsamp);
+                    app.MUedition.edition.silvalcon{i,j} = refinesil(app.MUedition.edition.Pulsetrain{i}(j,:), app.MUedition.edition.Dischargetimes{i,j}, app.MUedition.signal.fsamp);
                 end
             end
 
@@ -1324,28 +1639,48 @@ classdef MUedit_exported < matlab.apps.AppBase
             for i = 1:size(app.MUedition.edition.Pulsetrain,2)
                 % Update the list and load the edited files
                 for j = 1:size(app.MUedition.edition.Pulsetrain{i},1)
-                    app.MUdisplayedDropDown.Items = horzcat(app.MUdisplayedDropDown.Items, {['Grid_', num2str(i), '_MU_' , num2str(j)]});
+                    app.MUdisplayedDropDown.Items = horzcat(app.MUdisplayedDropDown.Items, {['Array_', num2str(i), '_MU_' , num2str(j)]});
                 end
+                app.MUdisplayedDropDown.Value = app.MUdisplayedDropDown.Items{1};
             end
 
-            % Update the graph
-            plot(app.UIAxesSpiketrain, app.MUedition.edition.time, app.MUedition.edition.Pulsetrain{1}(1,:), 'Color', [0.9412 0.9412 0.9412], 'LineWidth', 1);
-            hold(app.UIAxesSpiketrain, 'on')
-            plot(app.UIAxesSpiketrain, app.MUedition.edition.time, app.MUedition.signal.target/max(app.MUedition.signal.target), '--', 'LineWidth', 1, 'Color', [0.9412 0.9412 0.9412]);
-            plot(app.UIAxesSpiketrain, app.MUedition.edition.time(app.MUedition.edition.Dischargetimes{1,1}), app.MUedition.edition.Pulsetrain{1}(1,app.MUedition.edition.Dischargetimes{1,1}), 'o', 'LineWidth', 1, 'MarkerSize', 10, 'Color', [0.85 0.33 0.10]);
-            hold(app.UIAxesSpiketrain, 'off')
 
-            distime1 = zeros(1, length(app.MUedition.edition.Dischargetimes{1,1})-1);
-            for i = 1:length(app.MUedition.edition.Dischargetimes{1,1})-1
-                distime1(i) = (round((app.MUedition.edition.Dischargetimes{1,1}(i+1) - app.MUedition.edition.Dischargetimes{1,1}(i)) / 2) + app.MUedition.edition.Dischargetimes{1,1}(i)) / app.MUedition.signal.fsamp;
+            if ~isempty(app.MUdisplayedDropDown.Items)
+                C = strsplit(app.MUdisplayedDropDown.Value,'_');
+                % Update the graph
+                app.EditField_2.Value = ['SIL = ' num2str(app.MUedition.edition.silval{str2double(C{2}),str2double(C{4})})];
+
+                if app.SILCheckBox.Value == 1
+                    bar(app.UIAxesSIL, app.MUedition.edition.time(app.MUedition.edition.silvalcon{str2double(C{2}),str2double(C{4})}(:,1)), app.MUedition.edition.silvalcon{str2double(C{2}),str2double(C{4})}(:,2), 'EdgeColor', [0.9412 0.9412 0.9412], 'FaceColor', [0.15 0.15 0.15]);
+                    yline(app.UIAxesSIL, 0.9, 'LineWidth', 2, 'Color', [0.4660 0.6740 0.1880]);
+                    app.UIAxesSIL.XAxis.Visible = 'Off';
+                    app.UIAxesSIL.YColor = [0.9412 0.9412 0.9412];
+                end
+
+                plot(app.UIAxesSpiketrain, app.MUedition.edition.time, app.MUedition.edition.Pulsetrain{str2double(C{2})}(str2double(C{4}),:), 'Color', [0.9412 0.9412 0.9412], 'LineWidth', 1);
+                hold(app.UIAxesSpiketrain, 'on')
+                plot(app.UIAxesSpiketrain, app.MUedition.edition.time, app.MUedition.signal.target/max(app.MUedition.signal.target), '--', 'LineWidth', 1, 'Color', [0.9412 0.9412 0.9412]);
+                plot(app.UIAxesSpiketrain, app.MUedition.edition.time(app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})}), app.MUedition.edition.Pulsetrain{str2double(C{2})}(str2double(C{4}),app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})}), 'o', 'LineWidth', 1, 'MarkerSize', 10, 'Color', [0.85 0.33 0.10]);
+                hold(app.UIAxesSpiketrain, 'off')
+    
+                distime1 = zeros(1, length(app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})})-1);
+                for i = 1:length(app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})})-1
+                    distime1(i) = (round((app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})}(i+1) - app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})}(i)) / 2) + app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})}(i)) / app.MUedition.signal.fsamp;
+                end
+                DR1 = 1./((diff(app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})}))/app.MUedition.signal.fsamp);
+                plot(app.UIAxesDR, distime1, DR1, 'o', 'LineWidth', 1.5, 'MarkerSize', 10, 'Color', [0.9412 0.9412 0.9412]);
+    
+                app.UIAxesSpiketrain.YLim = [-0.05 1.5];
+                app.UIAxesSpiketrain.XLim = [app.graphstart app.graphend];
+                app.UIAxesDR.XLim = [app.graphstart app.graphend];
+                app.UIAxesDR.YLim = [0 max(DR1)*1.5];
+            else
+                plot(app.UIAxesSpiketrain, app.MUedition.edition.time, zeros(length(app.MUedition.edition.time),1), 'Color', [0.9412 0.9412 0.9412], 'LineWidth', 1);
+                plot(app.UIAxesDR, app.MUedition.edition.time, zeros(length(app.MUedition.edition.time),1), 'Color', [0.9412 0.9412 0.9412], 'LineWidth', 1);
+                app.MUdisplayedDropDown.Items = {'No MUs'};
+                app.MUdisplayedDropDown.Value = 'No MUs';
+                app.EditField_2.Value = 'no SIL ';
             end
-            DR1 = 1./((diff(app.MUedition.edition.Dischargetimes{1,1}))/app.MUedition.signal.fsamp);
-            plot(app.UIAxesDR, distime1, DR1, 'o', 'LineWidth', 1.5, 'MarkerSize', 10, 'Color', [0.9412 0.9412 0.9412]);
-
-            app.UIAxesSpiketrain.YLim = [-0.05 1.5];
-            app.UIAxesSpiketrain.XLim = [app.graphstart app.graphend];
-            app.UIAxesDR.XLim = [app.graphstart app.graphend];
-            app.UIAxesDR.YLim = [0 max(DR1)*1.5];
         end
 
         % Button pushed function: PlotMUspiketrainsButton
@@ -1359,7 +1694,7 @@ classdef MUedit_exported < matlab.apps.AppBase
                 plot(app.MUedition.edition.time,firings,'|','MarkerSize', 10, 'Color', [0.9412 0.9412 0.9412])
                 hold on
                 plot(app.MUedition.edition.time,app.MUedition.signal.target/max(app.MUedition.signal.target)*j,'--','LineWidth',1,'Color',[0.85 0.33 0.10]);
-                title(['Grid#' num2str(i) ' with ' num2str(j) ' MUs'], 'Color', [0.9412 0.9412 0.9412], 'FontName', 'Avenir Next')
+                title(['Array#' num2str(i) ' with ' num2str(j) ' MUs'], 'Color', [0.9412 0.9412 0.9412], 'FontName', 'Avenir Next')
                 xlabel('Time (s)', 'FontName', 'Avenir Next')
                 ylabel('MU#', 'FontName', 'Avenir Next')
                 ylim([0 j+1])
@@ -1367,7 +1702,7 @@ classdef MUedit_exported < matlab.apps.AppBase
                 set(gcf,'units','normalized','outerposition',[0 0 1 1])
                 set(gca,'Color', [0.15 0.15 0.15], 'XColor', [0.9412 0.9412 0.9412], 'YColor', [0.9412 0.9412 0.9412]);
             end
-            sgtitle(['Raster plots for ' num2str(i) ' grids'], 'FontName', 'Avenir Next', 'FontSize', 25, 'Color', [0.9412 0.9412 0.9412])
+            sgtitle(['Raster plots for ' num2str(i) ' arrays'], 'FontName', 'Avenir Next', 'FontSize', 25, 'Color', [0.9412 0.9412 0.9412])
         end
 
         % Button pushed function: PlotMUfiringratesButton
@@ -1391,14 +1726,14 @@ classdef MUedit_exported < matlab.apps.AppBase
                 end
                 clearvars firings smoothdr
 
-                title(['Grid#' num2str(i) ' with ' num2str(j) ' MUs'], 'Color', [0.9412 0.9412 0.9412], 'FontName', 'Avenir Next')
+                title(['Array#' num2str(i) ' with ' num2str(j) ' MUs'], 'Color', [0.9412 0.9412 0.9412], 'FontName', 'Avenir Next')
                 xlabel('Time (s)', 'FontName', 'Avenir Next')
                 ylabel('Smoothed discharge rates', 'FontName', 'Avenir Next')
                 set(gcf,'Color', [0.15 0.15 0.15]);
                 set(gcf,'units','normalized','outerposition',[0 0 1 1])
                 set(gca,'Color', [0.15 0.15 0.15], 'XColor', [0.9412 0.9412 0.9412], 'YColor', [0.9412 0.9412 0.9412]);
             end
-            sgtitle(['Smoothed discharge rates for ' num2str(i) ' grids'], 'FontName', 'Avenir Next', 'FontSize', 25, 'Color', [0.9412 0.9412 0.9412])
+            sgtitle(['Smoothed discharge rates for ' num2str(i) ' arrays'], 'FontName', 'Avenir Next', 'FontSize', 25, 'Color', [0.9412 0.9412 0.9412])
         end
 
         % Button pushed function: SaveButton
@@ -1423,7 +1758,7 @@ classdef MUedit_exported < matlab.apps.AppBase
                         app.MUedition.edition.Pulsetrainclean{i}(idx,:) = [];
                     end
                     ite = ite + 1;
-                    waitbar(ite/itetot, fwb,['Checking flagged units for Grid#' num2str(i) ' _MU#' num2str(j)])
+                    waitbar(ite/itetot, fwb,['Checking flagged units for Array#' num2str(i) ' _MU#' num2str(j)])
                 end
                 app.MUedition.edition.Distimeclean{i} = app.MUedition.edition.Distimeclean{i}(~cellfun('isempty',app.MUedition.edition.Distimeclean{i}));
             end
@@ -1448,6 +1783,36 @@ classdef MUedit_exported < matlab.apps.AppBase
             edition = app.MUedition.edition;
             save(savename, 'signal', 'parameters', 'edition', '-v7.3');
         end
+
+        % Key press function: UIFigure
+        function UIFigureKeyPress(app, event)
+            switch event.Key
+                case 'leftarrow'
+                    ScrollleftButtonPushed(app);
+                    disp(event.Key)
+                case 'rightarrow'
+                    ScrollrightButtonPushed(app);
+                    disp(event.Key)
+                case 'uparrow'
+                    ZoominButtonPushed(app);
+                    disp(event.Key)
+                case 'downarrow'
+                    ZoomoutButtonPushed(app);
+                case 'a'
+                    AddspikesButtonPushed(app);
+                case 'd'
+                    DeletespikesButtonPushed(app);
+                case 'r'
+                    RemoveoutliersButtonPushed(app);
+                case 'space'
+                    UpdateMUfilterButtonPushed(app);
+                case 's'
+                    LockspikesButtonPushed(app);
+                case 'e'
+                    ExtendMUfilterPushed(app);
+            end
+
+        end
     end
 
     % Component initialization
@@ -1459,803 +1824,789 @@ classdef MUedit_exported < matlab.apps.AppBase
             % Create UIFigure and hide until all components are created
             app.UIFigure = uifigure('Visible', 'off');
             app.UIFigure.Color = [0.149 0.149 0.149];
-            app.UIFigure.Position = [100 100 1141 690];
+            app.UIFigure.Position = [1 100 1500 850];
             app.UIFigure.Name = 'MATLAB App';
+            app.UIFigure.KeyPressFcn = createCallbackFcn(app, @UIFigureKeyPress, true);
 
-            % Create TabGroup
-            app.TabGroup = uitabgroup(app.UIFigure);
-            app.TabGroup.Position = [1 646 224 43];
-
-            % Create DecompositionTab
-            app.DecompositionTab = uitab(app.TabGroup);
-            app.DecompositionTab.Title = 'Decomposition';
-            app.DecompositionTab.BackgroundColor = [0.149 0.149 0.149];
-            app.DecompositionTab.ForegroundColor = [0.502 0.502 0.502];
-            app.DecompositionTab.ButtonDownFcn = createCallbackFcn(app, @DecompositionTabButtonDown, true);
-
-            % Create EditionTab
-            app.EditionTab = uitab(app.TabGroup);
-            app.EditionTab.Title = 'Edition';
-            app.EditionTab.BackgroundColor = [0.149 0.149 0.149];
-            app.EditionTab.ForegroundColor = [0.502 0.502 0.502];
-            app.EditionTab.ButtonDownFcn = createCallbackFcn(app, @EditionTabButtonDown, true);
-
-            % Create EditionPanel
-            app.EditionPanel = uipanel(app.UIFigure);
-            app.EditionPanel.ForegroundColor = [0.9412 0.9412 0.9412];
-            app.EditionPanel.Title = 'Edition';
-            app.EditionPanel.BackgroundColor = [0.149 0.149 0.149];
-            app.EditionPanel.FontName = 'Avenir Next';
-            app.EditionPanel.FontWeight = 'bold';
-            app.EditionPanel.FontSize = 14;
-            app.EditionPanel.Position = [2 1 225 665];
-
-            % Create EditField_saving_2
-            app.EditField_saving_2 = uieditfield(app.EditionPanel, 'text');
-            app.EditField_saving_2.Editable = 'off';
-            app.EditField_saving_2.FontName = 'Avenir Next';
-            app.EditField_saving_2.FontSize = 14;
-            app.EditField_saving_2.FontColor = [0.8118 0.502 1];
-            app.EditField_saving_2.BackgroundColor = [0.149 0.149 0.149];
-            app.EditField_saving_2.Position = [7 598 94 34];
-            app.EditField_saving_2.Value = 'File name';
-
-            % Create SelectfileButton_2
-            app.SelectfileButton_2 = uibutton(app.EditionPanel, 'push');
-            app.SelectfileButton_2.ButtonPushedFcn = createCallbackFcn(app, @SelectfileButton_2Pushed, true);
-            app.SelectfileButton_2.BackgroundColor = [0.149 0.149 0.149];
-            app.SelectfileButton_2.FontName = 'Avenir Next';
-            app.SelectfileButton_2.FontSize = 14;
-            app.SelectfileButton_2.FontWeight = 'bold';
-            app.SelectfileButton_2.FontColor = [0.8118 0.502 1];
-            app.SelectfileButton_2.Position = [114 598 101 34];
-            app.SelectfileButton_2.Text = 'Select file';
-
-            % Create ImportdataButton
-            app.ImportdataButton = uibutton(app.EditionPanel, 'push');
-            app.ImportdataButton.ButtonPushedFcn = createCallbackFcn(app, @ImportdataButtonPushed, true);
-            app.ImportdataButton.BackgroundColor = [0.149 0.149 0.149];
-            app.ImportdataButton.FontName = 'Avenir Next';
-            app.ImportdataButton.FontSize = 14;
-            app.ImportdataButton.FontWeight = 'bold';
-            app.ImportdataButton.FontColor = [0.8118 0.502 1];
-            app.ImportdataButton.Position = [8 556 207 34];
-            app.ImportdataButton.Text = 'Import data';
-
-            % Create RemovealltheoutliersButton
-            app.RemovealltheoutliersButton = uibutton(app.EditionPanel, 'push');
-            app.RemovealltheoutliersButton.ButtonPushedFcn = createCallbackFcn(app, @RemovealltheoutliersButtonPushed, true);
-            app.RemovealltheoutliersButton.BackgroundColor = [0.149 0.149 0.149];
-            app.RemovealltheoutliersButton.FontName = 'Avenir Next';
-            app.RemovealltheoutliersButton.FontSize = 14;
-            app.RemovealltheoutliersButton.FontWeight = 'bold';
-            app.RemovealltheoutliersButton.FontColor = [0.5608 0.6196 0.851];
-            app.RemovealltheoutliersButton.Position = [8 474 207 34];
-            app.RemovealltheoutliersButton.Text = '1 - Remove all the outliers';
-
-            % Create ReevaluateallMUfiltersButton
-            app.ReevaluateallMUfiltersButton = uibutton(app.EditionPanel, 'push');
-            app.ReevaluateallMUfiltersButton.ButtonPushedFcn = createCallbackFcn(app, @ReevaluateallMUfiltersButtonPushed, true);
-            app.ReevaluateallMUfiltersButton.BackgroundColor = [0.149 0.149 0.149];
-            app.ReevaluateallMUfiltersButton.FontName = 'Avenir Next';
-            app.ReevaluateallMUfiltersButton.FontSize = 14;
-            app.ReevaluateallMUfiltersButton.FontWeight = 'bold';
-            app.ReevaluateallMUfiltersButton.FontColor = [0.5608 0.6196 0.851];
-            app.ReevaluateallMUfiltersButton.Position = [8 430 207 34];
-            app.ReevaluateallMUfiltersButton.Text = '2 - Re-evaluate all MU filters';
-
-            % Create RemoveflaggedMUButton
-            app.RemoveflaggedMUButton = uibutton(app.EditionPanel, 'push');
-            app.RemoveflaggedMUButton.ButtonPushedFcn = createCallbackFcn(app, @RemoveflaggedMUButtonPushed, true);
-            app.RemoveflaggedMUButton.WordWrap = 'on';
-            app.RemoveflaggedMUButton.BackgroundColor = [0.149 0.149 0.149];
-            app.RemoveflaggedMUButton.FontName = 'Avenir Next';
-            app.RemoveflaggedMUButton.FontSize = 14;
-            app.RemoveflaggedMUButton.FontWeight = 'bold';
-            app.RemoveflaggedMUButton.FontColor = [0.5608 0.6196 0.851];
-            app.RemoveflaggedMUButton.Position = [8 386 207 34];
-            app.RemoveflaggedMUButton.Text = '3 - Remove flagged MU';
-
-            % Create PlotMUspiketrainsButton
-            app.PlotMUspiketrainsButton = uibutton(app.EditionPanel, 'push');
-            app.PlotMUspiketrainsButton.ButtonPushedFcn = createCallbackFcn(app, @PlotMUspiketrainsButtonPushed, true);
-            app.PlotMUspiketrainsButton.BackgroundColor = [0.149 0.149 0.149];
-            app.PlotMUspiketrainsButton.FontName = 'Avenir Next';
-            app.PlotMUspiketrainsButton.FontSize = 14;
-            app.PlotMUspiketrainsButton.FontWeight = 'bold';
-            app.PlotMUspiketrainsButton.FontColor = [0.3804 0.7804 0.749];
-            app.PlotMUspiketrainsButton.Position = [8 184 207 34];
-            app.PlotMUspiketrainsButton.Text = 'Plot MU spike trains';
-
-            % Create SaveButton
-            app.SaveButton = uibutton(app.EditionPanel, 'push');
-            app.SaveButton.ButtonPushedFcn = createCallbackFcn(app, @SaveButtonPushed, true);
-            app.SaveButton.BackgroundColor = [0.149 0.149 0.149];
-            app.SaveButton.FontName = 'Avenir Next';
-            app.SaveButton.FontSize = 14;
-            app.SaveButton.FontWeight = 'bold';
-            app.SaveButton.FontColor = [0.9412 0.9412 0.9412];
-            app.SaveButton.Position = [8 41 207 34];
-            app.SaveButton.Text = 'Save';
-
-            % Create BatchprocessingLabel
-            app.BatchprocessingLabel = uilabel(app.EditionPanel);
-            app.BatchprocessingLabel.HorizontalAlignment = 'center';
-            app.BatchprocessingLabel.FontName = 'Avenir Next';
-            app.BatchprocessingLabel.FontSize = 14;
-            app.BatchprocessingLabel.FontColor = [0.9412 0.9412 0.9412];
-            app.BatchprocessingLabel.Position = [54 511 115 22];
-            app.BatchprocessingLabel.Text = 'Batch processing';
-
-            % Create VisualisationLabel
-            app.VisualisationLabel = uilabel(app.EditionPanel);
-            app.VisualisationLabel.HorizontalAlignment = 'center';
-            app.VisualisationLabel.FontName = 'Avenir Next';
-            app.VisualisationLabel.FontSize = 14;
-            app.VisualisationLabel.FontColor = [0.9412 0.9412 0.9412];
-            app.VisualisationLabel.Position = [70 223 84 22];
-            app.VisualisationLabel.Text = 'Visualisation';
-
-            % Create SavetheeditionLabel
-            app.SavetheeditionLabel = uilabel(app.EditionPanel);
-            app.SavetheeditionLabel.HorizontalAlignment = 'center';
-            app.SavetheeditionLabel.WordWrap = 'on';
-            app.SavetheeditionLabel.FontName = 'Avenir Next';
-            app.SavetheeditionLabel.FontSize = 14;
-            app.SavetheeditionLabel.FontColor = [0.9412 0.9412 0.9412];
-            app.SavetheeditionLabel.Position = [12 81 199 22];
-            app.SavetheeditionLabel.Text = 'Save the edition';
-
-            % Create PlotMUfiringratesButton
-            app.PlotMUfiringratesButton = uibutton(app.EditionPanel, 'push');
-            app.PlotMUfiringratesButton.ButtonPushedFcn = createCallbackFcn(app, @PlotMUfiringratesButtonPushed, true);
-            app.PlotMUfiringratesButton.BackgroundColor = [0.149 0.149 0.149];
-            app.PlotMUfiringratesButton.FontName = 'Avenir Next';
-            app.PlotMUfiringratesButton.FontSize = 14;
-            app.PlotMUfiringratesButton.FontWeight = 'bold';
-            app.PlotMUfiringratesButton.FontColor = [0.3804 0.7804 0.749];
-            app.PlotMUfiringratesButton.Position = [8 139 207 34];
-            app.PlotMUfiringratesButton.Text = 'Plot MU firing rates';
-
-            % Create RemoveduplicateswithingridsButton
-            app.RemoveduplicateswithingridsButton = uibutton(app.EditionPanel, 'push');
-            app.RemoveduplicateswithingridsButton.ButtonPushedFcn = createCallbackFcn(app, @RemoveduplicateswithingridsButtonPushed, true);
-            app.RemoveduplicateswithingridsButton.WordWrap = 'on';
-            app.RemoveduplicateswithingridsButton.BackgroundColor = [0.149 0.149 0.149];
-            app.RemoveduplicateswithingridsButton.FontName = 'Avenir Next';
-            app.RemoveduplicateswithingridsButton.FontSize = 14;
-            app.RemoveduplicateswithingridsButton.FontWeight = 'bold';
-            app.RemoveduplicateswithingridsButton.FontColor = [0.5608 0.6196 0.851];
-            app.RemoveduplicateswithingridsButton.Position = [8 333 207 43];
-            app.RemoveduplicateswithingridsButton.Text = '4 - Remove duplicates within grids';
-
-            % Create RemoveduplicatesbetweengridsButton
-            app.RemoveduplicatesbetweengridsButton = uibutton(app.EditionPanel, 'push');
-            app.RemoveduplicatesbetweengridsButton.ButtonPushedFcn = createCallbackFcn(app, @RemoveduplicatesbetweengridsButtonPushed, true);
-            app.RemoveduplicatesbetweengridsButton.WordWrap = 'on';
-            app.RemoveduplicatesbetweengridsButton.BackgroundColor = [0.149 0.149 0.149];
-            app.RemoveduplicatesbetweengridsButton.FontName = 'Avenir Next';
-            app.RemoveduplicatesbetweengridsButton.FontSize = 14;
-            app.RemoveduplicatesbetweengridsButton.FontWeight = 'bold';
-            app.RemoveduplicatesbetweengridsButton.FontColor = [0.5608 0.6196 0.851];
-            app.RemoveduplicatesbetweengridsButton.Position = [8 280 207 43];
-            app.RemoveduplicatesbetweengridsButton.Text = '5 - Remove duplicates between grids';
-
-            % Create ManualeditionPanel
-            app.ManualeditionPanel = uipanel(app.UIFigure);
-            app.ManualeditionPanel.ForegroundColor = [0.9412 0.9412 0.9412];
-            app.ManualeditionPanel.Title = 'Manual edition';
-            app.ManualeditionPanel.BackgroundColor = [0.149 0.149 0.149];
-            app.ManualeditionPanel.FontName = 'Avenir Next';
-            app.ManualeditionPanel.FontWeight = 'bold';
-            app.ManualeditionPanel.FontSize = 14;
-            app.ManualeditionPanel.Position = [224 1 919 691];
+            % Create Panel_3
+            app.Panel_3 = uipanel(app.UIFigure);
+            app.Panel_3.ForegroundColor = [0.9412 0.9412 0.9412];
+            app.Panel_3.BackgroundColor = [0.149 0.149 0.149];
+            app.Panel_3.FontName = 'Poppins';
+            app.Panel_3.FontWeight = 'bold';
+            app.Panel_3.FontSize = 24;
+            app.Panel_3.Position = [400 0 1100 850];
 
             % Create UIAxesSpiketrain
-            app.UIAxesSpiketrain = uiaxes(app.ManualeditionPanel);
+            app.UIAxesSpiketrain = uiaxes(app.Panel_3);
             xlabel(app.UIAxesSpiketrain, 'Time (s)')
-            ylabel(app.UIAxesSpiketrain, 'Pulse train')
+            ylabel(app.UIAxesSpiketrain, 'Pulse train (au)')
             zlabel(app.UIAxesSpiketrain, 'Z')
             app.UIAxesSpiketrain.Toolbar.Visible = 'off';
-            app.UIAxesSpiketrain.FontName = 'Avenir Next';
+            app.UIAxesSpiketrain.FontName = 'Poppins';
             app.UIAxesSpiketrain.Color = 'none';
-            app.UIAxesSpiketrain.FontSize = 14;
             app.UIAxesSpiketrain.Interruptible = 'off';
             app.UIAxesSpiketrain.HitTest = 'off';
             app.UIAxesSpiketrain.PickableParts = 'none';
-            app.UIAxesSpiketrain.Position = [9 48 905 301];
+            app.UIAxesSpiketrain.Position = [5 105 1089 320];
 
             % Create UIAxesDR
-            app.UIAxesDR = uiaxes(app.ManualeditionPanel);
+            app.UIAxesDR = uiaxes(app.Panel_3);
             xlabel(app.UIAxesDR, 'Time (s)')
-            ylabel(app.UIAxesDR, 'Discharge rate')
+            ylabel(app.UIAxesDR, 'Discharge rate (pps)')
             zlabel(app.UIAxesDR, 'Z')
             app.UIAxesDR.Toolbar.Visible = 'off';
-            app.UIAxesDR.FontName = 'Avenir Next';
+            app.UIAxesDR.FontName = 'Poppins';
             app.UIAxesDR.Color = 'none';
-            app.UIAxesDR.FontSize = 14;
-            app.UIAxesDR.GridColor = [0.9412 0.9412 0.9412];
-            app.UIAxesDR.MinorGridColor = [0.9412 0.9412 0.9412];
             app.UIAxesDR.Interruptible = 'off';
             app.UIAxesDR.HitTest = 'off';
             app.UIAxesDR.PickableParts = 'none';
-            app.UIAxesDR.Position = [9 406 905 218];
+            app.UIAxesDR.Position = [5 492 1089 212];
+
+            % Create UIAxesSIL
+            app.UIAxesSIL = uiaxes(app.Panel_3);
+            xlabel(app.UIAxesSIL, 'Time (s)')
+            ylabel(app.UIAxesSIL, 'SIL')
+            zlabel(app.UIAxesSIL, 'Z')
+            app.UIAxesSIL.Toolbar.Visible = 'off';
+            app.UIAxesSIL.FontName = 'Poppins';
+            app.UIAxesSIL.Color = 'none';
+            app.UIAxesSIL.Interruptible = 'off';
+            app.UIAxesSIL.HitTest = 'off';
+            app.UIAxesSIL.PickableParts = 'none';
+            app.UIAxesSIL.Position = [5 706 1089 96];
 
             % Create MUdisplayedDropDown
-            app.MUdisplayedDropDown = uidropdown(app.ManualeditionPanel);
+            app.MUdisplayedDropDown = uidropdown(app.Panel_3);
             app.MUdisplayedDropDown.Items = {'No MUs'};
             app.MUdisplayedDropDown.ValueChangedFcn = createCallbackFcn(app, @MUdisplayedDropDownValueChanged, true);
             app.MUdisplayedDropDown.Enable = 'off';
-            app.MUdisplayedDropDown.FontName = 'Avenir Next';
-            app.MUdisplayedDropDown.FontSize = 14;
+            app.MUdisplayedDropDown.FontName = 'Poppins';
+            app.MUdisplayedDropDown.FontSize = 18;
             app.MUdisplayedDropDown.FontColor = [0.9412 0.9412 0.9412];
             app.MUdisplayedDropDown.BackgroundColor = [0.149 0.149 0.149];
-            app.MUdisplayedDropDown.Position = [132 632 139 34];
+            app.MUdisplayedDropDown.Position = [212 810 207 40];
             app.MUdisplayedDropDown.Value = 'No MUs';
 
             % Create MUdisplayedDropDownLabel
-            app.MUdisplayedDropDownLabel = uilabel(app.ManualeditionPanel);
+            app.MUdisplayedDropDownLabel = uilabel(app.Panel_3);
             app.MUdisplayedDropDownLabel.HorizontalAlignment = 'center';
-            app.MUdisplayedDropDownLabel.FontName = 'Avenir Next';
-            app.MUdisplayedDropDownLabel.FontSize = 14;
+            app.MUdisplayedDropDownLabel.FontName = 'Poppins';
+            app.MUdisplayedDropDownLabel.FontSize = 24;
+            app.MUdisplayedDropDownLabel.FontWeight = 'bold';
             app.MUdisplayedDropDownLabel.FontColor = [0.9412 0.9412 0.9412];
-            app.MUdisplayedDropDownLabel.Position = [6 632 118 34];
+            app.MUdisplayedDropDownLabel.Position = [5 810 200 40];
             app.MUdisplayedDropDownLabel.Text = 'MU displayed #';
 
             % Create RemoveoutliersButton
-            app.RemoveoutliersButton = uibutton(app.ManualeditionPanel, 'push');
+            app.RemoveoutliersButton = uibutton(app.Panel_3, 'push');
             app.RemoveoutliersButton.ButtonPushedFcn = createCallbackFcn(app, @RemoveoutliersButtonPushed, true);
             app.RemoveoutliersButton.BackgroundColor = [0.149 0.149 0.149];
-            app.RemoveoutliersButton.FontName = 'Avenir Next';
-            app.RemoveoutliersButton.FontSize = 14;
-            app.RemoveoutliersButton.FontWeight = 'bold';
+            app.RemoveoutliersButton.FontName = 'Poppins';
+            app.RemoveoutliersButton.FontSize = 18;
             app.RemoveoutliersButton.FontColor = [0.9412 0.9412 0.9412];
-            app.RemoveoutliersButton.Position = [458 632 165 34];
+            app.RemoveoutliersButton.Position = [648 810 173 40];
             app.RemoveoutliersButton.Text = 'Remove outliers';
 
             % Create FlagMUfordeletionButton
-            app.FlagMUfordeletionButton = uibutton(app.ManualeditionPanel, 'push');
+            app.FlagMUfordeletionButton = uibutton(app.Panel_3, 'push');
             app.FlagMUfordeletionButton.ButtonPushedFcn = createCallbackFcn(app, @FlagMUfordeletionButtonPushed, true);
             app.FlagMUfordeletionButton.BackgroundColor = [0.149 0.149 0.149];
-            app.FlagMUfordeletionButton.FontName = 'Avenir Next';
-            app.FlagMUfordeletionButton.FontSize = 14;
-            app.FlagMUfordeletionButton.FontWeight = 'bold';
+            app.FlagMUfordeletionButton.FontName = 'Poppins';
+            app.FlagMUfordeletionButton.FontSize = 18;
             app.FlagMUfordeletionButton.FontColor = [1 0 0];
-            app.FlagMUfordeletionButton.Position = [282 632 165 34];
+            app.FlagMUfordeletionButton.Position = [435 810 197 40];
             app.FlagMUfordeletionButton.Text = 'Flag MU for deletion';
 
             % Create AddspikesButton
-            app.AddspikesButton = uibutton(app.ManualeditionPanel, 'push');
+            app.AddspikesButton = uibutton(app.Panel_3, 'push');
             app.AddspikesButton.ButtonPushedFcn = createCallbackFcn(app, @AddspikesButtonPushed, true);
             app.AddspikesButton.BackgroundColor = [0.149 0.149 0.149];
-            app.AddspikesButton.FontName = 'Avenir Next';
-            app.AddspikesButton.FontSize = 14;
-            app.AddspikesButton.FontWeight = 'bold';
+            app.AddspikesButton.FontName = 'Poppins';
+            app.AddspikesButton.FontSize = 18;
             app.AddspikesButton.FontColor = [0.9412 0.9412 0.9412];
-            app.AddspikesButton.Position = [8 362 110 34];
+            app.AddspikesButton.Position = [5 438 150 45];
             app.AddspikesButton.Text = 'Add spikes';
 
             % Create DeletespikesButton
-            app.DeletespikesButton = uibutton(app.ManualeditionPanel, 'push');
+            app.DeletespikesButton = uibutton(app.Panel_3, 'push');
             app.DeletespikesButton.ButtonPushedFcn = createCallbackFcn(app, @DeletespikesButtonPushed, true);
             app.DeletespikesButton.BackgroundColor = [0.149 0.149 0.149];
-            app.DeletespikesButton.FontName = 'Avenir Next';
-            app.DeletespikesButton.FontSize = 14;
-            app.DeletespikesButton.FontWeight = 'bold';
+            app.DeletespikesButton.FontName = 'Poppins';
+            app.DeletespikesButton.FontSize = 18;
             app.DeletespikesButton.FontColor = [0.9412 0.9412 0.9412];
-            app.DeletespikesButton.Position = [124 362 110 34];
+            app.DeletespikesButton.Position = [167 438 150 45];
             app.DeletespikesButton.Text = 'Delete spikes';
 
             % Create DeleteDRButton
-            app.DeleteDRButton = uibutton(app.ManualeditionPanel, 'push');
+            app.DeleteDRButton = uibutton(app.Panel_3, 'push');
             app.DeleteDRButton.ButtonPushedFcn = createCallbackFcn(app, @DeleteDRButtonPushed, true);
             app.DeleteDRButton.BackgroundColor = [0.149 0.149 0.149];
-            app.DeleteDRButton.FontName = 'Avenir Next';
-            app.DeleteDRButton.FontSize = 14;
-            app.DeleteDRButton.FontWeight = 'bold';
+            app.DeleteDRButton.FontName = 'Poppins';
+            app.DeleteDRButton.FontSize = 18;
             app.DeleteDRButton.FontColor = [0.9412 0.9412 0.9412];
-            app.DeleteDRButton.Position = [240 362 110 34];
+            app.DeleteDRButton.Position = [329 438 150 45];
             app.DeleteDRButton.Text = 'Delete DR';
 
             % Create ScrollleftButton
-            app.ScrollleftButton = uibutton(app.ManualeditionPanel, 'push');
+            app.ScrollleftButton = uibutton(app.Panel_3, 'push');
             app.ScrollleftButton.ButtonPushedFcn = createCallbackFcn(app, @ScrollleftButtonPushed, true);
             app.ScrollleftButton.BackgroundColor = [0.149 0.149 0.149];
-            app.ScrollleftButton.FontName = 'Avenir Next';
-            app.ScrollleftButton.FontSize = 14;
-            app.ScrollleftButton.FontWeight = 'bold';
+            app.ScrollleftButton.FontName = 'Poppins';
+            app.ScrollleftButton.FontSize = 18;
             app.ScrollleftButton.FontColor = [0.9412 0.9412 0.9412];
-            app.ScrollleftButton.Position = [6 11 215 34];
+            app.ScrollleftButton.Position = [5 49 250 45];
             app.ScrollleftButton.Text = '< Scroll left';
 
             % Create ZoominButton
-            app.ZoominButton = uibutton(app.ManualeditionPanel, 'push');
+            app.ZoominButton = uibutton(app.Panel_3, 'push');
             app.ZoominButton.ButtonPushedFcn = createCallbackFcn(app, @ZoominButtonPushed, true);
             app.ZoominButton.BackgroundColor = [0.149 0.149 0.149];
-            app.ZoominButton.FontName = 'Avenir Next';
-            app.ZoominButton.FontSize = 14;
-            app.ZoominButton.FontWeight = 'bold';
+            app.ZoominButton.FontName = 'Poppins';
+            app.ZoominButton.FontSize = 18;
             app.ZoominButton.FontColor = [0.9412 0.9412 0.9412];
-            app.ZoominButton.Position = [238 11 215 34];
+            app.ZoominButton.Position = [285 49 250 45];
             app.ZoominButton.Text = 'Zoom in';
 
             % Create ZoomoutButton
-            app.ZoomoutButton = uibutton(app.ManualeditionPanel, 'push');
+            app.ZoomoutButton = uibutton(app.Panel_3, 'push');
             app.ZoomoutButton.ButtonPushedFcn = createCallbackFcn(app, @ZoomoutButtonPushed, true);
             app.ZoomoutButton.BackgroundColor = [0.149 0.149 0.149];
-            app.ZoomoutButton.FontName = 'Avenir Next';
-            app.ZoomoutButton.FontSize = 14;
-            app.ZoomoutButton.FontWeight = 'bold';
+            app.ZoomoutButton.FontName = 'Poppins';
+            app.ZoomoutButton.FontSize = 18;
             app.ZoomoutButton.FontColor = [0.9412 0.9412 0.9412];
-            app.ZoomoutButton.Position = [470 11 215 34];
+            app.ZoomoutButton.Position = [565 49 250 45];
             app.ZoomoutButton.Text = 'Zoom out';
 
             % Create ScrollrightButton
-            app.ScrollrightButton = uibutton(app.ManualeditionPanel, 'push');
+            app.ScrollrightButton = uibutton(app.Panel_3, 'push');
             app.ScrollrightButton.ButtonPushedFcn = createCallbackFcn(app, @ScrollrightButtonPushed, true);
             app.ScrollrightButton.BackgroundColor = [0.149 0.149 0.149];
-            app.ScrollrightButton.FontName = 'Avenir Next';
-            app.ScrollrightButton.FontSize = 14;
-            app.ScrollrightButton.FontWeight = 'bold';
+            app.ScrollrightButton.FontName = 'Poppins';
+            app.ScrollrightButton.FontSize = 18;
             app.ScrollrightButton.FontColor = [0.9412 0.9412 0.9412];
-            app.ScrollrightButton.Position = [702 11 215 34];
+            app.ScrollrightButton.Position = [845 49 250 45];
             app.ScrollrightButton.Text = 'Scroll right >';
 
-            % Create ReevaluatewithwhiteningButton
-            app.ReevaluatewithwhiteningButton = uibutton(app.ManualeditionPanel, 'push');
-            app.ReevaluatewithwhiteningButton.ButtonPushedFcn = createCallbackFcn(app, @ReevaluatewithwhiteningButtonPushed, true);
-            app.ReevaluatewithwhiteningButton.BackgroundColor = [0.149 0.149 0.149];
-            app.ReevaluatewithwhiteningButton.FontName = 'Avenir Next';
-            app.ReevaluatewithwhiteningButton.FontSize = 14;
-            app.ReevaluatewithwhiteningButton.FontWeight = 'bold';
-            app.ReevaluatewithwhiteningButton.FontColor = [0.9412 0.9412 0.9412];
-            app.ReevaluatewithwhiteningButton.Position = [698 362 220 34];
-            app.ReevaluatewithwhiteningButton.Text = 'Re-evaluate with whitening';
+            % Create UpdateMUfilterButton
+            app.UpdateMUfilterButton = uibutton(app.Panel_3, 'push');
+            app.UpdateMUfilterButton.ButtonPushedFcn = createCallbackFcn(app, @UpdateMUfilterButtonPushed, true);
+            app.UpdateMUfilterButton.BackgroundColor = [0.149 0.149 0.149];
+            app.UpdateMUfilterButton.FontName = 'Poppins';
+            app.UpdateMUfilterButton.FontSize = 18;
+            app.UpdateMUfilterButton.FontColor = [0.9412 0.9412 0.9412];
+            app.UpdateMUfilterButton.Position = [653 437 215 45];
+            app.UpdateMUfilterButton.Text = 'Update MU filter';
 
-            % Create ReevaluatewithoutwhiteningButton
-            app.ReevaluatewithoutwhiteningButton = uibutton(app.ManualeditionPanel, 'push');
-            app.ReevaluatewithoutwhiteningButton.ButtonPushedFcn = createCallbackFcn(app, @ReevaluatewithoutwhiteningButtonPushed, true);
-            app.ReevaluatewithoutwhiteningButton.BackgroundColor = [0.149 0.149 0.149];
-            app.ReevaluatewithoutwhiteningButton.FontName = 'Avenir Next';
-            app.ReevaluatewithoutwhiteningButton.FontSize = 14;
-            app.ReevaluatewithoutwhiteningButton.FontWeight = 'bold';
-            app.ReevaluatewithoutwhiteningButton.FontColor = [0.9412 0.9412 0.9412];
-            app.ReevaluatewithoutwhiteningButton.Position = [469 362 227 34];
-            app.ReevaluatewithoutwhiteningButton.Text = 'Re-evaluate without whitening';
+            % Create ExtendMUfilter
+            app.ExtendMUfilter = uibutton(app.Panel_3, 'push');
+            app.ExtendMUfilter.ButtonPushedFcn = createCallbackFcn(app, @ExtendMUfilterPushed, true);
+            app.ExtendMUfilter.BackgroundColor = [0.149 0.149 0.149];
+            app.ExtendMUfilter.FontName = 'Poppins';
+            app.ExtendMUfilter.FontSize = 18;
+            app.ExtendMUfilter.FontColor = [0.9412 0.9412 0.9412];
+            app.ExtendMUfilter.Position = [880 437 215 45];
+            app.ExtendMUfilter.Text = 'Extend MU filter';
 
             % Create EditField_2
-            app.EditField_2 = uieditfield(app.ManualeditionPanel, 'text');
-            app.EditField_2.FontName = 'Avenir Next';
-            app.EditField_2.FontSize = 14;
+            app.EditField_2 = uieditfield(app.Panel_3, 'text');
+            app.EditField_2.FontName = 'Poppins';
+            app.EditField_2.FontSize = 18;
             app.EditField_2.FontColor = [1 1 1];
             app.EditField_2.BackgroundColor = [0.149 0.149 0.149];
-            app.EditField_2.Position = [810 632 99 33];
+            app.EditField_2.Position = [985 810 110 40];
 
             % Create UndoButton
-            app.UndoButton = uibutton(app.ManualeditionPanel, 'push');
+            app.UndoButton = uibutton(app.Panel_3, 'push');
             app.UndoButton.ButtonPushedFcn = createCallbackFcn(app, @UndoButtonPushed, true);
             app.UndoButton.BackgroundColor = [0.149 0.149 0.149];
-            app.UndoButton.FontName = 'Avenir Next';
-            app.UndoButton.FontSize = 14;
-            app.UndoButton.FontWeight = 'bold';
+            app.UndoButton.FontName = 'Poppins';
+            app.UndoButton.FontSize = 18;
             app.UndoButton.FontColor = [0.3882 0.8314 0.0706];
-            app.UndoButton.Position = [634 632 165 34];
+            app.UndoButton.Position = [836 810 134 40];
             app.UndoButton.Text = 'Undo';
 
             % Create LockspikesButton
-            app.LockspikesButton = uibutton(app.ManualeditionPanel, 'push');
+            app.LockspikesButton = uibutton(app.Panel_3, 'push');
             app.LockspikesButton.ButtonPushedFcn = createCallbackFcn(app, @LockspikesButtonPushed, true);
             app.LockspikesButton.BackgroundColor = [0.149 0.149 0.149];
-            app.LockspikesButton.FontName = 'Avenir Next';
-            app.LockspikesButton.FontSize = 14;
-            app.LockspikesButton.FontWeight = 'bold';
+            app.LockspikesButton.FontName = 'Poppins';
+            app.LockspikesButton.FontSize = 18;
             app.LockspikesButton.FontColor = [0.9412 0.9412 0.9412];
-            app.LockspikesButton.Position = [356 362 110 34];
+            app.LockspikesButton.Position = [491 438 150 45];
             app.LockspikesButton.Text = 'Lock spikes';
 
-            % Create VisualisationPanel
-            app.VisualisationPanel = uipanel(app.UIFigure);
-            app.VisualisationPanel.ForegroundColor = [0.9412 0.9412 0.9412];
-            app.VisualisationPanel.Title = 'Visualisation';
-            app.VisualisationPanel.BackgroundColor = [0.149 0.149 0.149];
-            app.VisualisationPanel.FontName = 'Avenir Next';
-            app.VisualisationPanel.FontWeight = 'bold';
-            app.VisualisationPanel.FontSize = 14;
-            app.VisualisationPanel.Position = [224 1 919 691];
+            % Create Panel_4
+            app.Panel_4 = uipanel(app.UIFigure);
+            app.Panel_4.ForegroundColor = [0.9412 0.9412 0.9412];
+            app.Panel_4.BackgroundColor = [0.149 0.149 0.149];
+            app.Panel_4.FontName = 'Poppins';
+            app.Panel_4.FontWeight = 'bold';
+            app.Panel_4.FontSize = 24;
+            app.Panel_4.Position = [0 0 400 810];
+
+            % Create EditField_saving_2
+            app.EditField_saving_2 = uieditfield(app.Panel_4, 'text');
+            app.EditField_saving_2.Editable = 'off';
+            app.EditField_saving_2.FontName = 'Poppins';
+            app.EditField_saving_2.FontSize = 18;
+            app.EditField_saving_2.FontColor = [0.8118 0.502 1];
+            app.EditField_saving_2.BackgroundColor = [0.149 0.149 0.149];
+            app.EditField_saving_2.Position = [15 757 190 45];
+            app.EditField_saving_2.Value = 'File name';
+
+            % Create SelectfileButton_2
+            app.SelectfileButton_2 = uibutton(app.Panel_4, 'push');
+            app.SelectfileButton_2.ButtonPushedFcn = createCallbackFcn(app, @SelectfileButton_2Pushed, true);
+            app.SelectfileButton_2.BackgroundColor = [0.149 0.149 0.149];
+            app.SelectfileButton_2.FontName = 'Poppins';
+            app.SelectfileButton_2.FontSize = 18;
+            app.SelectfileButton_2.FontColor = [0.8118 0.502 1];
+            app.SelectfileButton_2.Position = [213 757 172 45];
+            app.SelectfileButton_2.Text = 'Select file';
+
+            % Create ImportdataButton
+            app.ImportdataButton = uibutton(app.Panel_4, 'push');
+            app.ImportdataButton.ButtonPushedFcn = createCallbackFcn(app, @ImportdataButtonPushed, true);
+            app.ImportdataButton.BackgroundColor = [0.149 0.149 0.149];
+            app.ImportdataButton.FontName = 'Poppins';
+            app.ImportdataButton.FontSize = 18;
+            app.ImportdataButton.FontColor = [0.8118 0.502 1];
+            app.ImportdataButton.Position = [15 707 369 45];
+            app.ImportdataButton.Text = 'Import data';
+
+            % Create RemovealltheoutliersButton
+            app.RemovealltheoutliersButton = uibutton(app.Panel_4, 'push');
+            app.RemovealltheoutliersButton.ButtonPushedFcn = createCallbackFcn(app, @RemovealltheoutliersButtonPushed, true);
+            app.RemovealltheoutliersButton.BackgroundColor = [0.149 0.149 0.149];
+            app.RemovealltheoutliersButton.FontName = 'Poppins';
+            app.RemovealltheoutliersButton.FontSize = 18;
+            app.RemovealltheoutliersButton.FontColor = [0.5608 0.6196 0.851];
+            app.RemovealltheoutliersButton.Position = [15 609 369 45];
+            app.RemovealltheoutliersButton.Text = '1 - Remove all the outliers';
+
+            % Create UpdateallMUfiltersButton
+            app.UpdateallMUfiltersButton = uibutton(app.Panel_4, 'push');
+            app.UpdateallMUfiltersButton.ButtonPushedFcn = createCallbackFcn(app, @UpdateallMUfiltersButtonPushed, true);
+            app.UpdateallMUfiltersButton.BackgroundColor = [0.149 0.149 0.149];
+            app.UpdateallMUfiltersButton.FontName = 'Poppins';
+            app.UpdateallMUfiltersButton.FontSize = 18;
+            app.UpdateallMUfiltersButton.FontColor = [0.5608 0.6196 0.851];
+            app.UpdateallMUfiltersButton.Position = [15 552 369 45];
+            app.UpdateallMUfiltersButton.Text = '2 - Update all MU filters';
+
+            % Create RemoveflaggedMUButton
+            app.RemoveflaggedMUButton = uibutton(app.Panel_4, 'push');
+            app.RemoveflaggedMUButton.ButtonPushedFcn = createCallbackFcn(app, @RemoveflaggedMUButtonPushed, true);
+            app.RemoveflaggedMUButton.WordWrap = 'on';
+            app.RemoveflaggedMUButton.BackgroundColor = [0.149 0.149 0.149];
+            app.RemoveflaggedMUButton.FontName = 'Poppins';
+            app.RemoveflaggedMUButton.FontSize = 18;
+            app.RemoveflaggedMUButton.FontColor = [0.5608 0.6196 0.851];
+            app.RemoveflaggedMUButton.Position = [15 495 369 45];
+            app.RemoveflaggedMUButton.Text = '3 - Remove flagged MU';
+
+            % Create PlotMUspiketrainsButton
+            app.PlotMUspiketrainsButton = uibutton(app.Panel_4, 'push');
+            app.PlotMUspiketrainsButton.ButtonPushedFcn = createCallbackFcn(app, @PlotMUspiketrainsButtonPushed, true);
+            app.PlotMUspiketrainsButton.BackgroundColor = [0.149 0.149 0.149];
+            app.PlotMUspiketrainsButton.FontName = 'Poppins';
+            app.PlotMUspiketrainsButton.FontSize = 18;
+            app.PlotMUspiketrainsButton.FontColor = [0.3804 0.7804 0.749];
+            app.PlotMUspiketrainsButton.Position = [15 218 369 45];
+            app.PlotMUspiketrainsButton.Text = 'Plot MU spike trains';
+
+            % Create SaveButton
+            app.SaveButton = uibutton(app.Panel_4, 'push');
+            app.SaveButton.ButtonPushedFcn = createCallbackFcn(app, @SaveButtonPushed, true);
+            app.SaveButton.BackgroundColor = [0.149 0.149 0.149];
+            app.SaveButton.FontName = 'Poppins';
+            app.SaveButton.FontSize = 18;
+            app.SaveButton.FontColor = [0.9412 0.9412 0.9412];
+            app.SaveButton.Position = [15 49 369 45];
+            app.SaveButton.Text = 'Save';
+
+            % Create BatchprocessingLabel
+            app.BatchprocessingLabel = uilabel(app.Panel_4);
+            app.BatchprocessingLabel.HorizontalAlignment = 'center';
+            app.BatchprocessingLabel.FontName = 'Poppins';
+            app.BatchprocessingLabel.FontSize = 18;
+            app.BatchprocessingLabel.FontWeight = 'bold';
+            app.BatchprocessingLabel.FontColor = [0.9412 0.9412 0.9412];
+            app.BatchprocessingLabel.Position = [117 665 166 23];
+            app.BatchprocessingLabel.Text = 'Batch processing';
+
+            % Create VisualisationLabel
+            app.VisualisationLabel = uilabel(app.Panel_4);
+            app.VisualisationLabel.HorizontalAlignment = 'center';
+            app.VisualisationLabel.FontName = 'Poppins';
+            app.VisualisationLabel.FontSize = 18;
+            app.VisualisationLabel.FontWeight = 'bold';
+            app.VisualisationLabel.FontColor = [0.9412 0.9412 0.9412];
+            app.VisualisationLabel.Position = [137 329 127 23];
+            app.VisualisationLabel.Text = 'Visualisation';
+
+            % Create SavetheeditionLabel
+            app.SavetheeditionLabel = uilabel(app.Panel_4);
+            app.SavetheeditionLabel.HorizontalAlignment = 'center';
+            app.SavetheeditionLabel.WordWrap = 'on';
+            app.SavetheeditionLabel.FontName = 'Poppins';
+            app.SavetheeditionLabel.FontSize = 18;
+            app.SavetheeditionLabel.FontWeight = 'bold';
+            app.SavetheeditionLabel.FontColor = [0.9412 0.9412 0.9412];
+            app.SavetheeditionLabel.Position = [101 109 199 23];
+            app.SavetheeditionLabel.Text = 'Save the edition';
+
+            % Create PlotMUfiringratesButton
+            app.PlotMUfiringratesButton = uibutton(app.Panel_4, 'push');
+            app.PlotMUfiringratesButton.ButtonPushedFcn = createCallbackFcn(app, @PlotMUfiringratesButtonPushed, true);
+            app.PlotMUfiringratesButton.BackgroundColor = [0.149 0.149 0.149];
+            app.PlotMUfiringratesButton.FontName = 'Poppins';
+            app.PlotMUfiringratesButton.FontSize = 18;
+            app.PlotMUfiringratesButton.FontColor = [0.3804 0.7804 0.749];
+            app.PlotMUfiringratesButton.Position = [15 163 369 45];
+            app.PlotMUfiringratesButton.Text = 'Plot MU firing rates';
+
+            % Create RemoveduplicateswithingridsButton
+            app.RemoveduplicateswithingridsButton = uibutton(app.Panel_4, 'push');
+            app.RemoveduplicateswithingridsButton.ButtonPushedFcn = createCallbackFcn(app, @RemoveduplicateswithingridsButtonPushed, true);
+            app.RemoveduplicateswithingridsButton.WordWrap = 'on';
+            app.RemoveduplicateswithingridsButton.BackgroundColor = [0.149 0.149 0.149];
+            app.RemoveduplicateswithingridsButton.FontName = 'Poppins';
+            app.RemoveduplicateswithingridsButton.FontSize = 18;
+            app.RemoveduplicateswithingridsButton.FontColor = [0.5608 0.6196 0.851];
+            app.RemoveduplicateswithingridsButton.Position = [15 438 369 45];
+            app.RemoveduplicateswithingridsButton.Text = '4 - Remove duplicates within grids';
+
+            % Create RemoveduplicatesbetweengridsButton
+            app.RemoveduplicatesbetweengridsButton = uibutton(app.Panel_4, 'push');
+            app.RemoveduplicatesbetweengridsButton.ButtonPushedFcn = createCallbackFcn(app, @RemoveduplicatesbetweengridsButtonPushed, true);
+            app.RemoveduplicatesbetweengridsButton.WordWrap = 'on';
+            app.RemoveduplicatesbetweengridsButton.BackgroundColor = [0.149 0.149 0.149];
+            app.RemoveduplicatesbetweengridsButton.FontName = 'Poppins';
+            app.RemoveduplicatesbetweengridsButton.FontSize = 18;
+            app.RemoveduplicatesbetweengridsButton.FontColor = [0.5608 0.6196 0.851];
+            app.RemoveduplicatesbetweengridsButton.Position = [15 381 369 45];
+            app.RemoveduplicatesbetweengridsButton.Text = '5 - Remove duplicates between grids';
+
+            % Create ReferenceDropDown_2Label
+            app.ReferenceDropDown_2Label = uilabel(app.Panel_4);
+            app.ReferenceDropDown_2Label.HorizontalAlignment = 'right';
+            app.ReferenceDropDown_2Label.FontName = 'Poppins';
+            app.ReferenceDropDown_2Label.FontSize = 18;
+            app.ReferenceDropDown_2Label.FontColor = [0.3804 0.7804 0.749];
+            app.ReferenceDropDown_2Label.Position = [28 287 96 23];
+            app.ReferenceDropDown_2Label.Text = 'Reference';
+
+            % Create ReferenceDropDown_2
+            app.ReferenceDropDown_2 = uidropdown(app.Panel_4);
+            app.ReferenceDropDown_2.Items = {'Target', 'Force', 'EMG amplitude', 'All'};
+            app.ReferenceDropDown_2.ValueChangedFcn = createCallbackFcn(app, @ReferenceDropDown_2ValueChanged, true);
+            app.ReferenceDropDown_2.FontName = 'Poppins';
+            app.ReferenceDropDown_2.FontSize = 18;
+            app.ReferenceDropDown_2.FontColor = [0.3804 0.7804 0.749];
+            app.ReferenceDropDown_2.BackgroundColor = [0.149 0.149 0.149];
+            app.ReferenceDropDown_2.Position = [136 276 162 45];
+            app.ReferenceDropDown_2.Value = 'Target';
+
+            % Create CheckBox
+            app.CheckBox = uicheckbox(app.Panel_4);
+            app.CheckBox.Position = [1 808 2 2];
+
+            % Create SILCheckBox
+            app.SILCheckBox = uicheckbox(app.Panel_4);
+            app.SILCheckBox.ValueChangedFcn = createCallbackFcn(app, @SILCheckBoxValueChanged, true);
+            app.SILCheckBox.Text = ' SIL';
+            app.SILCheckBox.FontName = 'Poppins';
+            app.SILCheckBox.FontSize = 18;
+            app.SILCheckBox.FontColor = [0.3804 0.7804 0.749];
+            app.SILCheckBox.Position = [315 276 56 45];
+
+            % Create Panel_2
+            app.Panel_2 = uipanel(app.UIFigure);
+            app.Panel_2.ForegroundColor = [0.9412 0.9412 0.9412];
+            app.Panel_2.BackgroundColor = [0.149 0.149 0.149];
+            app.Panel_2.FontName = 'Poppins';
+            app.Panel_2.FontWeight = 'bold';
+            app.Panel_2.FontSize = 24;
+            app.Panel_2.Position = [400 0 1100 850];
 
             % Create UIAxes_Decomp_1
-            app.UIAxes_Decomp_1 = uiaxes(app.VisualisationPanel);
+            app.UIAxes_Decomp_1 = uiaxes(app.Panel_2);
             xlabel(app.UIAxes_Decomp_1, 'Time (s)')
             ylabel(app.UIAxes_Decomp_1, 'Pulse train')
             zlabel(app.UIAxes_Decomp_1, 'Z')
             app.UIAxes_Decomp_1.Toolbar.Visible = 'off';
-            app.UIAxes_Decomp_1.FontName = 'Avenir Next';
+            app.UIAxes_Decomp_1.FontName = 'Poppins';
             app.UIAxes_Decomp_1.Color = 'none';
-            app.UIAxes_Decomp_1.FontSize = 14;
-            app.UIAxes_Decomp_1.GridColor = [1 1 1];
-            app.UIAxes_Decomp_1.MinorGridColor = [1 1 1];
             app.UIAxes_Decomp_1.Interruptible = 'off';
             app.UIAxes_Decomp_1.HitTest = 'off';
             app.UIAxes_Decomp_1.PickableParts = 'none';
-            app.UIAxes_Decomp_1.Position = [2 2 916 342];
+            app.UIAxes_Decomp_1.Position = [0 35 1100 400];
 
             % Create UIAxes_Decomp_2
-            app.UIAxes_Decomp_2 = uiaxes(app.VisualisationPanel);
+            app.UIAxes_Decomp_2 = uiaxes(app.Panel_2);
             xlabel(app.UIAxes_Decomp_2, 'Time (s)')
-            ylabel(app.UIAxes_Decomp_2, 'Reference (Force or EMG amplitude)')
+            ylabel(app.UIAxes_Decomp_2, 'Reference')
             zlabel(app.UIAxes_Decomp_2, 'Z')
             app.UIAxes_Decomp_2.Toolbar.Visible = 'off';
-            app.UIAxes_Decomp_2.FontName = 'Avenir Next';
+            app.UIAxes_Decomp_2.FontName = 'Poppins';
             app.UIAxes_Decomp_2.Color = 'none';
-            app.UIAxes_Decomp_2.FontSize = 14;
-            app.UIAxes_Decomp_2.GridColor = [0.15 0.15 0.15];
-            app.UIAxes_Decomp_2.MinorGridColor = [0 0 0];
             app.UIAxes_Decomp_2.ButtonDownFcn = createCallbackFcn(app, @AddspikesButtonPushed, true);
             app.UIAxes_Decomp_2.Interruptible = 'off';
             app.UIAxes_Decomp_2.HitTest = 'off';
             app.UIAxes_Decomp_2.PickableParts = 'none';
-            app.UIAxes_Decomp_2.Position = [1 350 914 285];
+            app.UIAxes_Decomp_2.Position = [0 440 1100 370];
 
             % Create EditField
-            app.EditField = uieditfield(app.VisualisationPanel, 'text');
+            app.EditField = uieditfield(app.Panel_2, 'text');
             app.EditField.HorizontalAlignment = 'center';
-            app.EditField.FontName = 'Avenir Next';
-            app.EditField.FontSize = 14;
+            app.EditField.FontName = 'Poppins';
+            app.EditField.FontSize = 24;
             app.EditField.FontWeight = 'bold';
             app.EditField.FontColor = [1 1 1];
             app.EditField.BackgroundColor = [0.149 0.149 0.149];
-            app.EditField.Position = [2 639 917 27];
+            app.EditField.Position = [1 810 1100 40];
 
-            % Create DecompositionSettingsPanel
-            app.DecompositionSettingsPanel = uipanel(app.UIFigure);
-            app.DecompositionSettingsPanel.ForegroundColor = [0.9412 0.9412 0.9412];
-            app.DecompositionSettingsPanel.Title = 'Decomposition Settings';
-            app.DecompositionSettingsPanel.BackgroundColor = [0.149 0.149 0.149];
-            app.DecompositionSettingsPanel.FontName = 'Avenir Next';
-            app.DecompositionSettingsPanel.FontWeight = 'bold';
-            app.DecompositionSettingsPanel.FontSize = 14;
-            app.DecompositionSettingsPanel.Position = [2 1 225 665];
+            % Create Panel
+            app.Panel = uipanel(app.UIFigure);
+            app.Panel.ForegroundColor = [0.9412 0.9412 0.9412];
+            app.Panel.BackgroundColor = [0.149 0.149 0.149];
+            app.Panel.FontName = 'Poppins';
+            app.Panel.FontWeight = 'bold';
+            app.Panel.FontSize = 24;
+            app.Panel.Position = [0 0 400 810];
 
             % Create StartButton
-            app.StartButton = uibutton(app.DecompositionSettingsPanel, 'push');
+            app.StartButton = uibutton(app.Panel, 'push');
             app.StartButton.ButtonPushedFcn = createCallbackFcn(app, @StartButtonPushed, true);
             app.StartButton.BackgroundColor = [0.149 0.149 0.149];
-            app.StartButton.FontName = 'Avenir Next';
-            app.StartButton.FontSize = 14;
+            app.StartButton.FontName = 'Poppins';
+            app.StartButton.FontSize = 18;
             app.StartButton.FontWeight = 'bold';
             app.StartButton.FontColor = [0.9412 0.9412 0.9412];
-            app.StartButton.Position = [6 11 207 34];
+            app.StartButton.Position = [15 7 369 45];
             app.StartButton.Text = 'Start';
 
             % Create SILthresholdEditFieldLabel
-            app.SILthresholdEditFieldLabel = uilabel(app.DecompositionSettingsPanel);
+            app.SILthresholdEditFieldLabel = uilabel(app.Panel);
             app.SILthresholdEditFieldLabel.BackgroundColor = [0.149 0.149 0.149];
             app.SILthresholdEditFieldLabel.HorizontalAlignment = 'right';
-            app.SILthresholdEditFieldLabel.FontName = 'Avenir Next';
-            app.SILthresholdEditFieldLabel.FontSize = 13;
-            app.SILthresholdEditFieldLabel.FontWeight = 'bold';
+            app.SILthresholdEditFieldLabel.FontName = 'Poppins';
+            app.SILthresholdEditFieldLabel.FontSize = 18;
             app.SILthresholdEditFieldLabel.FontColor = [0.3804 0.7804 0.749];
-            app.SILthresholdEditFieldLabel.Position = [71 92 87 22];
+            app.SILthresholdEditFieldLabel.Position = [118 107 123 35];
             app.SILthresholdEditFieldLabel.Text = 'SIL threshold';
 
             % Create SILthresholdEditField
-            app.SILthresholdEditField = uieditfield(app.DecompositionSettingsPanel, 'numeric');
-            app.SILthresholdEditField.FontName = 'Avenir Next';
-            app.SILthresholdEditField.FontSize = 13;
+            app.SILthresholdEditField = uieditfield(app.Panel, 'numeric');
+            app.SILthresholdEditField.FontName = 'Poppins';
+            app.SILthresholdEditField.FontSize = 18;
             app.SILthresholdEditField.FontColor = [0.3804 0.7804 0.749];
             app.SILthresholdEditField.BackgroundColor = [0.149 0.149 0.149];
-            app.SILthresholdEditField.Position = [173 92 44 22];
+            app.SILthresholdEditField.Position = [256 107 128 35];
             app.SILthresholdEditField.Value = 0.9;
 
             % Create NumberofiterationsEditField_2Label
-            app.NumberofiterationsEditField_2Label = uilabel(app.DecompositionSettingsPanel);
+            app.NumberofiterationsEditField_2Label = uilabel(app.Panel);
             app.NumberofiterationsEditField_2Label.BackgroundColor = [0.149 0.149 0.149];
             app.NumberofiterationsEditField_2Label.HorizontalAlignment = 'right';
-            app.NumberofiterationsEditField_2Label.FontName = 'Avenir Next';
-            app.NumberofiterationsEditField_2Label.FontSize = 13;
-            app.NumberofiterationsEditField_2Label.FontWeight = 'bold';
+            app.NumberofiterationsEditField_2Label.FontName = 'Poppins';
+            app.NumberofiterationsEditField_2Label.FontSize = 18;
             app.NumberofiterationsEditField_2Label.FontColor = [0.3804 0.7804 0.749];
-            app.NumberofiterationsEditField_2Label.Position = [22 301 136 22];
+            app.NumberofiterationsEditField_2Label.Position = [44 333 197 35];
             app.NumberofiterationsEditField_2Label.Text = 'Number of iterations';
 
             % Create NumberofiterationsEditField_2
-            app.NumberofiterationsEditField_2 = uieditfield(app.DecompositionSettingsPanel, 'numeric');
-            app.NumberofiterationsEditField_2.FontName = 'Avenir Next';
-            app.NumberofiterationsEditField_2.FontSize = 13;
+            app.NumberofiterationsEditField_2 = uieditfield(app.Panel, 'numeric');
+            app.NumberofiterationsEditField_2.FontName = 'Poppins';
+            app.NumberofiterationsEditField_2.FontSize = 18;
             app.NumberofiterationsEditField_2.FontColor = [0.3804 0.7804 0.749];
             app.NumberofiterationsEditField_2.BackgroundColor = [0.149 0.149 0.149];
-            app.NumberofiterationsEditField_2.Position = [173 301 44 22];
+            app.NumberofiterationsEditField_2.Position = [256 333 128 35];
             app.NumberofiterationsEditField_2.Value = 150;
 
             % Create EditField_saving_3
-            app.EditField_saving_3 = uieditfield(app.DecompositionSettingsPanel, 'text');
+            app.EditField_saving_3 = uieditfield(app.Panel, 'text');
             app.EditField_saving_3.Editable = 'off';
-            app.EditField_saving_3.FontName = 'Avenir';
-            app.EditField_saving_3.FontSize = 14;
+            app.EditField_saving_3.FontName = 'Poppins';
+            app.EditField_saving_3.FontSize = 18;
             app.EditField_saving_3.FontColor = [0.8118 0.502 1];
             app.EditField_saving_3.BackgroundColor = [0.149 0.149 0.149];
-            app.EditField_saving_3.Position = [7 596 90 34];
+            app.EditField_saving_3.Position = [15 757 179 45];
             app.EditField_saving_3.Value = 'File name';
 
             % Create SelectfileButton
-            app.SelectfileButton = uibutton(app.DecompositionSettingsPanel, 'push');
+            app.SelectfileButton = uibutton(app.Panel, 'push');
             app.SelectfileButton.ButtonPushedFcn = createCallbackFcn(app, @SelectfileButtonPushed, true);
             app.SelectfileButton.BackgroundColor = [0.149 0.149 0.149];
-            app.SelectfileButton.FontName = 'Avenir';
-            app.SelectfileButton.FontSize = 14;
-            app.SelectfileButton.FontWeight = 'bold';
+            app.SelectfileButton.FontName = 'Poppins';
+            app.SelectfileButton.FontSize = 18;
             app.SelectfileButton.FontColor = [0.8118 0.502 1];
-            app.SelectfileButton.Position = [103 595 116 34];
+            app.SelectfileButton.Position = [204 757 181 45];
             app.SelectfileButton.Text = 'Select file';
 
             % Create NbofextendedchannelsLabel
-            app.NbofextendedchannelsLabel = uilabel(app.DecompositionSettingsPanel);
+            app.NbofextendedchannelsLabel = uilabel(app.Panel);
             app.NbofextendedchannelsLabel.BackgroundColor = [0.149 0.149 0.149];
             app.NbofextendedchannelsLabel.HorizontalAlignment = 'right';
             app.NbofextendedchannelsLabel.WordWrap = 'on';
-            app.NbofextendedchannelsLabel.FontName = 'Avenir Next';
-            app.NbofextendedchannelsLabel.FontSize = 13;
-            app.NbofextendedchannelsLabel.FontWeight = 'bold';
+            app.NbofextendedchannelsLabel.FontName = 'Poppins';
+            app.NbofextendedchannelsLabel.FontSize = 18;
             app.NbofextendedchannelsLabel.FontColor = [0.3804 0.7804 0.749];
-            app.NbofextendedchannelsLabel.Position = [14 159 147 32];
+            app.NbofextendedchannelsLabel.Position = [15 197 229 35];
             app.NbofextendedchannelsLabel.Text = 'Nb of extended channels ';
 
             % Create NbofextendedchannelsEditField
-            app.NbofextendedchannelsEditField = uieditfield(app.DecompositionSettingsPanel, 'numeric');
-            app.NbofextendedchannelsEditField.FontName = 'Avenir Next';
-            app.NbofextendedchannelsEditField.FontSize = 13;
+            app.NbofextendedchannelsEditField = uieditfield(app.Panel, 'numeric');
+            app.NbofextendedchannelsEditField.FontName = 'Poppins';
+            app.NbofextendedchannelsEditField.FontSize = 18;
             app.NbofextendedchannelsEditField.FontColor = [0.3804 0.7804 0.749];
             app.NbofextendedchannelsEditField.BackgroundColor = [0.149 0.149 0.149];
-            app.NbofextendedchannelsEditField.Position = [174 164 43 22];
+            app.NbofextendedchannelsEditField.Position = [257 197 127 35];
             app.NbofextendedchannelsEditField.Value = 1000;
 
             % Create ReferenceDropDownLabel
-            app.ReferenceDropDownLabel = uilabel(app.DecompositionSettingsPanel);
+            app.ReferenceDropDownLabel = uilabel(app.Panel);
             app.ReferenceDropDownLabel.HorizontalAlignment = 'right';
-            app.ReferenceDropDownLabel.FontName = 'Avenir Next';
-            app.ReferenceDropDownLabel.FontSize = 13;
-            app.ReferenceDropDownLabel.FontWeight = 'bold';
+            app.ReferenceDropDownLabel.FontName = 'Poppins';
+            app.ReferenceDropDownLabel.FontSize = 18;
             app.ReferenceDropDownLabel.FontColor = [0.5608 0.6196 0.851];
-            app.ReferenceDropDownLabel.Position = [26 564 69 22];
+            app.ReferenceDropDownLabel.Position = [80 655 98 35];
             app.ReferenceDropDownLabel.Text = 'Reference';
 
             % Create ReferenceDropDown
-            app.ReferenceDropDown = uidropdown(app.DecompositionSettingsPanel);
-            app.ReferenceDropDown.Items = {'Force', 'EMG amplitude'};
-            app.ReferenceDropDown.FontName = 'Avenir Next';
-            app.ReferenceDropDown.FontSize = 13;
-            app.ReferenceDropDown.FontWeight = 'bold';
+            app.ReferenceDropDown = uidropdown(app.Panel);
+            app.ReferenceDropDown.Items = {'Target', 'EMG amplitude'};
+            app.ReferenceDropDown.FontName = 'Poppins';
+            app.ReferenceDropDown.FontSize = 18;
             app.ReferenceDropDown.FontColor = [0.5608 0.6196 0.851];
             app.ReferenceDropDown.BackgroundColor = [0.149 0.149 0.149];
-            app.ReferenceDropDown.Position = [103 562 114 26];
-            app.ReferenceDropDown.Value = 'Force';
+            app.ReferenceDropDown.Position = [186 655 198 35];
+            app.ReferenceDropDown.Value = 'Target';
 
             % Create CheckEMGDropDownLabel
-            app.CheckEMGDropDownLabel = uilabel(app.DecompositionSettingsPanel);
+            app.CheckEMGDropDownLabel = uilabel(app.Panel);
             app.CheckEMGDropDownLabel.HorizontalAlignment = 'right';
-            app.CheckEMGDropDownLabel.FontName = 'Avenir Next';
-            app.CheckEMGDropDownLabel.FontSize = 13;
-            app.CheckEMGDropDownLabel.FontWeight = 'bold';
+            app.CheckEMGDropDownLabel.FontName = 'Poppins';
+            app.CheckEMGDropDownLabel.FontSize = 18;
             app.CheckEMGDropDownLabel.FontColor = [0.5608 0.6196 0.851];
-            app.CheckEMGDropDownLabel.Position = [17 527 78 22];
+            app.CheckEMGDropDownLabel.Position = [70 609 108 35];
             app.CheckEMGDropDownLabel.Text = 'Check EMG';
 
             % Create CheckEMGDropDown
-            app.CheckEMGDropDown = uidropdown(app.DecompositionSettingsPanel);
+            app.CheckEMGDropDown = uidropdown(app.Panel);
             app.CheckEMGDropDown.Items = {'Yes', 'No'};
-            app.CheckEMGDropDown.FontName = 'Avenir Next';
-            app.CheckEMGDropDown.FontSize = 13;
-            app.CheckEMGDropDown.FontWeight = 'bold';
+            app.CheckEMGDropDown.FontName = 'Poppins';
+            app.CheckEMGDropDown.FontSize = 18;
             app.CheckEMGDropDown.FontColor = [0.5608 0.6196 0.851];
             app.CheckEMGDropDown.BackgroundColor = [0.149 0.149 0.149];
-            app.CheckEMGDropDown.Position = [103 525 114 26];
+            app.CheckEMGDropDown.Position = [186 609 198 35];
             app.CheckEMGDropDown.Value = 'Yes';
 
             % Create PeeloffDropDownLabel
-            app.PeeloffDropDownLabel = uilabel(app.DecompositionSettingsPanel);
+            app.PeeloffDropDownLabel = uilabel(app.Panel);
             app.PeeloffDropDownLabel.HorizontalAlignment = 'right';
-            app.PeeloffDropDownLabel.FontName = 'Avenir Next';
-            app.PeeloffDropDownLabel.FontSize = 13;
-            app.PeeloffDropDownLabel.FontWeight = 'bold';
+            app.PeeloffDropDownLabel.FontName = 'Poppins';
+            app.PeeloffDropDownLabel.FontSize = 18;
             app.PeeloffDropDownLabel.FontColor = [0.5608 0.6196 0.851];
-            app.PeeloffDropDownLabel.Position = [45 375 50 22];
+            app.PeeloffDropDownLabel.Position = [110 425 68 35];
             app.PeeloffDropDownLabel.Text = 'Peeloff';
 
             % Create PeeloffDropDown
-            app.PeeloffDropDown = uidropdown(app.DecompositionSettingsPanel);
+            app.PeeloffDropDown = uidropdown(app.Panel);
             app.PeeloffDropDown.Items = {'Yes', 'No'};
-            app.PeeloffDropDown.FontName = 'Avenir Next';
-            app.PeeloffDropDown.FontSize = 13;
-            app.PeeloffDropDown.FontWeight = 'bold';
+            app.PeeloffDropDown.FontName = 'Poppins';
+            app.PeeloffDropDown.FontSize = 18;
             app.PeeloffDropDown.FontColor = [0.5608 0.6196 0.851];
             app.PeeloffDropDown.BackgroundColor = [0.149 0.149 0.149];
-            app.PeeloffDropDown.Position = [103 373 114 26];
-            app.PeeloffDropDown.Value = 'No';
+            app.PeeloffDropDown.Position = [186 425 198 35];
+            app.PeeloffDropDown.Value = 'Yes';
 
             % Create NumberofwindowsEditFieldLabel
-            app.NumberofwindowsEditFieldLabel = uilabel(app.DecompositionSettingsPanel);
+            app.NumberofwindowsEditFieldLabel = uilabel(app.Panel);
             app.NumberofwindowsEditFieldLabel.BackgroundColor = [0.149 0.149 0.149];
             app.NumberofwindowsEditFieldLabel.HorizontalAlignment = 'right';
-            app.NumberofwindowsEditFieldLabel.FontName = 'Avenir Next';
-            app.NumberofwindowsEditFieldLabel.FontSize = 13;
-            app.NumberofwindowsEditFieldLabel.FontWeight = 'bold';
+            app.NumberofwindowsEditFieldLabel.FontName = 'Poppins';
+            app.NumberofwindowsEditFieldLabel.FontSize = 18;
             app.NumberofwindowsEditFieldLabel.FontColor = [0.3804 0.7804 0.749];
-            app.NumberofwindowsEditFieldLabel.Position = [24 268 134 22];
+            app.NumberofwindowsEditFieldLabel.Position = [51 287 190 35];
             app.NumberofwindowsEditFieldLabel.Text = 'Number of windows';
 
             % Create NumberofwindowsEditField
-            app.NumberofwindowsEditField = uieditfield(app.DecompositionSettingsPanel, 'numeric');
-            app.NumberofwindowsEditField.FontName = 'Avenir Next';
-            app.NumberofwindowsEditField.FontSize = 13;
+            app.NumberofwindowsEditField = uieditfield(app.Panel, 'numeric');
+            app.NumberofwindowsEditField.FontName = 'Poppins';
+            app.NumberofwindowsEditField.FontSize = 18;
             app.NumberofwindowsEditField.FontColor = [0.3804 0.7804 0.749];
             app.NumberofwindowsEditField.BackgroundColor = [0.149 0.149 0.149];
-            app.NumberofwindowsEditField.Position = [173 268 44 22];
+            app.NumberofwindowsEditField.Position = [256 287 128 35];
             app.NumberofwindowsEditField.Value = 1;
 
             % Create CoVfilterDropDownLabel
-            app.CoVfilterDropDownLabel = uilabel(app.DecompositionSettingsPanel);
+            app.CoVfilterDropDownLabel = uilabel(app.Panel);
             app.CoVfilterDropDownLabel.HorizontalAlignment = 'right';
-            app.CoVfilterDropDownLabel.FontName = 'Avenir Next';
-            app.CoVfilterDropDownLabel.FontSize = 13;
-            app.CoVfilterDropDownLabel.FontWeight = 'bold';
+            app.CoVfilterDropDownLabel.FontName = 'Poppins';
+            app.CoVfilterDropDownLabel.FontSize = 18;
             app.CoVfilterDropDownLabel.FontColor = [0.5608 0.6196 0.851];
-            app.CoVfilterDropDownLabel.Position = [31 411 64 22];
+            app.CoVfilterDropDownLabel.Position = [88 471 90 35];
             app.CoVfilterDropDownLabel.Text = 'CoV filter';
 
             % Create CoVfilterDropDown
-            app.CoVfilterDropDown = uidropdown(app.DecompositionSettingsPanel);
+            app.CoVfilterDropDown = uidropdown(app.Panel);
             app.CoVfilterDropDown.Items = {'Yes', 'No'};
-            app.CoVfilterDropDown.FontName = 'Avenir Next';
-            app.CoVfilterDropDown.FontSize = 13;
-            app.CoVfilterDropDown.FontWeight = 'bold';
+            app.CoVfilterDropDown.FontName = 'Poppins';
+            app.CoVfilterDropDown.FontSize = 18;
             app.CoVfilterDropDown.FontColor = [0.5608 0.6196 0.851];
             app.CoVfilterDropDown.BackgroundColor = [0.149 0.149 0.149];
-            app.CoVfilterDropDown.Position = [103 409 114 26];
-            app.CoVfilterDropDown.Value = 'No';
+            app.CoVfilterDropDown.Position = [186 471 198 35];
+            app.CoVfilterDropDown.Value = 'Yes';
 
             % Create InitialisationDropDownLabel
-            app.InitialisationDropDownLabel = uilabel(app.DecompositionSettingsPanel);
+            app.InitialisationDropDownLabel = uilabel(app.Panel);
             app.InitialisationDropDownLabel.HorizontalAlignment = 'right';
-            app.InitialisationDropDownLabel.FontName = 'Avenir Next';
-            app.InitialisationDropDownLabel.FontSize = 13;
-            app.InitialisationDropDownLabel.FontWeight = 'bold';
+            app.InitialisationDropDownLabel.FontName = 'Poppins';
+            app.InitialisationDropDownLabel.FontSize = 18;
             app.InitialisationDropDownLabel.FontColor = [0.5608 0.6196 0.851];
-            app.InitialisationDropDownLabel.Position = [12 447 83 22];
+            app.InitialisationDropDownLabel.Position = [56 517 122 35];
             app.InitialisationDropDownLabel.Text = 'Initialisation';
 
             % Create InitialisationDropDown
-            app.InitialisationDropDown = uidropdown(app.DecompositionSettingsPanel);
+            app.InitialisationDropDown = uidropdown(app.Panel);
             app.InitialisationDropDown.Items = {'EMG max', 'Random'};
-            app.InitialisationDropDown.FontName = 'Avenir Next';
-            app.InitialisationDropDown.FontSize = 13;
-            app.InitialisationDropDown.FontWeight = 'bold';
+            app.InitialisationDropDown.FontName = 'Poppins';
+            app.InitialisationDropDown.FontSize = 18;
             app.InitialisationDropDown.FontColor = [0.5608 0.6196 0.851];
             app.InitialisationDropDown.BackgroundColor = [0.149 0.149 0.149];
-            app.InitialisationDropDown.Position = [103 445 114 26];
+            app.InitialisationDropDown.Position = [186 517 198 35];
             app.InitialisationDropDown.Value = 'EMG max';
 
             % Create RefineMUsDropDownLabel
-            app.RefineMUsDropDownLabel = uilabel(app.DecompositionSettingsPanel);
+            app.RefineMUsDropDownLabel = uilabel(app.Panel);
             app.RefineMUsDropDownLabel.HorizontalAlignment = 'right';
-            app.RefineMUsDropDownLabel.FontName = 'Avenir Next';
-            app.RefineMUsDropDownLabel.FontSize = 13;
-            app.RefineMUsDropDownLabel.FontWeight = 'bold';
+            app.RefineMUsDropDownLabel.FontName = 'Poppins';
+            app.RefineMUsDropDownLabel.FontSize = 18;
             app.RefineMUsDropDownLabel.FontColor = [0.5608 0.6196 0.851];
-            app.RefineMUsDropDownLabel.Position = [18 339 77 22];
+            app.RefineMUsDropDownLabel.Position = [72 379 106 35];
             app.RefineMUsDropDownLabel.Text = 'Refine MUs';
 
             % Create RefineMUsDropDown
-            app.RefineMUsDropDown = uidropdown(app.DecompositionSettingsPanel);
+            app.RefineMUsDropDown = uidropdown(app.Panel);
             app.RefineMUsDropDown.Items = {'Yes', 'No'};
-            app.RefineMUsDropDown.FontName = 'Avenir Next';
-            app.RefineMUsDropDown.FontSize = 13;
-            app.RefineMUsDropDown.FontWeight = 'bold';
+            app.RefineMUsDropDown.FontName = 'Poppins';
+            app.RefineMUsDropDown.FontSize = 18;
             app.RefineMUsDropDown.FontColor = [0.5608 0.6196 0.851];
             app.RefineMUsDropDown.BackgroundColor = [0.149 0.149 0.149];
-            app.RefineMUsDropDown.Position = [103 337 114 26];
-            app.RefineMUsDropDown.Value = 'No';
+            app.RefineMUsDropDown.Position = [186 379 198 35];
+            app.RefineMUsDropDown.Value = 'Yes';
 
             % Create ThresholdtargetEditFieldLabel
-            app.ThresholdtargetEditFieldLabel = uilabel(app.DecompositionSettingsPanel);
+            app.ThresholdtargetEditFieldLabel = uilabel(app.Panel);
             app.ThresholdtargetEditFieldLabel.BackgroundColor = [0.149 0.149 0.149];
             app.ThresholdtargetEditFieldLabel.HorizontalAlignment = 'right';
-            app.ThresholdtargetEditFieldLabel.FontName = 'Avenir Next';
-            app.ThresholdtargetEditFieldLabel.FontSize = 13;
-            app.ThresholdtargetEditFieldLabel.FontWeight = 'bold';
+            app.ThresholdtargetEditFieldLabel.FontName = 'Poppins';
+            app.ThresholdtargetEditFieldLabel.FontSize = 18;
             app.ThresholdtargetEditFieldLabel.FontColor = [0.3804 0.7804 0.749];
-            app.ThresholdtargetEditFieldLabel.Position = [48 202 110 22];
+            app.ThresholdtargetEditFieldLabel.Position = [82 242 159 35];
             app.ThresholdtargetEditFieldLabel.Text = 'Threshold target';
 
             % Create ThresholdtargetEditField
-            app.ThresholdtargetEditField = uieditfield(app.DecompositionSettingsPanel, 'numeric');
-            app.ThresholdtargetEditField.FontName = 'Avenir Next';
-            app.ThresholdtargetEditField.FontSize = 13;
+            app.ThresholdtargetEditField = uieditfield(app.Panel, 'numeric');
+            app.ThresholdtargetEditField.FontName = 'Poppins';
+            app.ThresholdtargetEditField.FontSize = 18;
             app.ThresholdtargetEditField.FontColor = [0.3804 0.7804 0.749];
             app.ThresholdtargetEditField.BackgroundColor = [0.149 0.149 0.149];
-            app.ThresholdtargetEditField.Position = [173 202 44 22];
+            app.ThresholdtargetEditField.Position = [256 242 128 35];
             app.ThresholdtargetEditField.Value = 0.9;
 
-            % Create NumberofelectrodesEditFieldLabel
-            app.NumberofelectrodesEditFieldLabel = uilabel(app.DecompositionSettingsPanel);
-            app.NumberofelectrodesEditFieldLabel.BackgroundColor = [0.149 0.149 0.149];
-            app.NumberofelectrodesEditFieldLabel.HorizontalAlignment = 'right';
-            app.NumberofelectrodesEditFieldLabel.FontName = 'Avenir Next';
-            app.NumberofelectrodesEditFieldLabel.FontSize = 13;
-            app.NumberofelectrodesEditFieldLabel.FontWeight = 'bold';
-            app.NumberofelectrodesEditFieldLabel.FontColor = [0.3804 0.7804 0.749];
-            app.NumberofelectrodesEditFieldLabel.Position = [15 235 143 22];
-            app.NumberofelectrodesEditFieldLabel.Text = 'Number of electrodes';
-
-            % Create NumberofelectrodesEditField
-            app.NumberofelectrodesEditField = uieditfield(app.DecompositionSettingsPanel, 'numeric');
-            app.NumberofelectrodesEditField.FontName = 'Avenir Next';
-            app.NumberofelectrodesEditField.FontSize = 13;
-            app.NumberofelectrodesEditField.FontColor = [0.3804 0.7804 0.749];
-            app.NumberofelectrodesEditField.BackgroundColor = [0.149 0.149 0.149];
-            app.NumberofelectrodesEditField.Position = [173 235 44 22];
-            app.NumberofelectrodesEditField.Value = 64;
-
             % Create COVthresholdEditFieldLabel
-            app.COVthresholdEditFieldLabel = uilabel(app.DecompositionSettingsPanel);
+            app.COVthresholdEditFieldLabel = uilabel(app.Panel);
             app.COVthresholdEditFieldLabel.BackgroundColor = [0.149 0.149 0.149];
             app.COVthresholdEditFieldLabel.HorizontalAlignment = 'right';
-            app.COVthresholdEditFieldLabel.FontName = 'Avenir Next';
-            app.COVthresholdEditFieldLabel.FontSize = 13;
-            app.COVthresholdEditFieldLabel.FontWeight = 'bold';
+            app.COVthresholdEditFieldLabel.FontName = 'Poppins';
+            app.COVthresholdEditFieldLabel.FontSize = 18;
             app.COVthresholdEditFieldLabel.FontColor = [0.3804 0.7804 0.749];
-            app.COVthresholdEditFieldLabel.Position = [61 59 97 22];
+            app.COVthresholdEditFieldLabel.Position = [102 62 139 35];
             app.COVthresholdEditFieldLabel.Text = 'COV threshold';
 
             % Create COVthresholdEditField
-            app.COVthresholdEditField = uieditfield(app.DecompositionSettingsPanel, 'numeric');
-            app.COVthresholdEditField.FontName = 'Avenir Next';
-            app.COVthresholdEditField.FontSize = 13;
+            app.COVthresholdEditField = uieditfield(app.Panel, 'numeric');
+            app.COVthresholdEditField.FontName = 'Poppins';
+            app.COVthresholdEditField.FontSize = 18;
             app.COVthresholdEditField.FontColor = [0.3804 0.7804 0.749];
             app.COVthresholdEditField.BackgroundColor = [0.149 0.149 0.149];
-            app.COVthresholdEditField.Position = [173 59 44 22];
+            app.COVthresholdEditField.Position = [256 62 128 35];
             app.COVthresholdEditField.Value = 0.5;
 
             % Create DuplicatethresholdEditFieldLabel
-            app.DuplicatethresholdEditFieldLabel = uilabel(app.DecompositionSettingsPanel);
+            app.DuplicatethresholdEditFieldLabel = uilabel(app.Panel);
             app.DuplicatethresholdEditFieldLabel.BackgroundColor = [0.149 0.149 0.149];
             app.DuplicatethresholdEditFieldLabel.HorizontalAlignment = 'right';
-            app.DuplicatethresholdEditFieldLabel.FontName = 'Avenir Next';
-            app.DuplicatethresholdEditFieldLabel.FontSize = 13;
-            app.DuplicatethresholdEditFieldLabel.FontWeight = 'bold';
+            app.DuplicatethresholdEditFieldLabel.FontName = 'Poppins';
+            app.DuplicatethresholdEditFieldLabel.FontSize = 18;
             app.DuplicatethresholdEditFieldLabel.FontColor = [0.3804 0.7804 0.749];
-            app.DuplicatethresholdEditFieldLabel.Position = [29 125 129 22];
+            app.DuplicatethresholdEditFieldLabel.Position = [53 152 188 35];
             app.DuplicatethresholdEditFieldLabel.Text = 'Duplicate threshold';
 
             % Create DuplicatethresholdEditField
-            app.DuplicatethresholdEditField = uieditfield(app.DecompositionSettingsPanel, 'numeric');
-            app.DuplicatethresholdEditField.FontName = 'Avenir Next';
-            app.DuplicatethresholdEditField.FontSize = 13;
+            app.DuplicatethresholdEditField = uieditfield(app.Panel, 'numeric');
+            app.DuplicatethresholdEditField.FontName = 'Poppins';
+            app.DuplicatethresholdEditField.FontSize = 18;
             app.DuplicatethresholdEditField.FontColor = [0.3804 0.7804 0.749];
             app.DuplicatethresholdEditField.BackgroundColor = [0.149 0.149 0.149];
-            app.DuplicatethresholdEditField.Position = [173 125 44 22];
+            app.DuplicatethresholdEditField.Position = [256 152 128 35];
             app.DuplicatethresholdEditField.Value = 0.3;
 
             % Create ContrastfunctionLabel
-            app.ContrastfunctionLabel = uilabel(app.DecompositionSettingsPanel);
+            app.ContrastfunctionLabel = uilabel(app.Panel);
             app.ContrastfunctionLabel.HorizontalAlignment = 'center';
             app.ContrastfunctionLabel.WordWrap = 'on';
-            app.ContrastfunctionLabel.FontName = 'Avenir Next';
-            app.ContrastfunctionLabel.FontSize = 13;
-            app.ContrastfunctionLabel.FontWeight = 'bold';
+            app.ContrastfunctionLabel.FontName = 'Poppins';
+            app.ContrastfunctionLabel.FontSize = 18;
             app.ContrastfunctionLabel.FontColor = [0.5608 0.6196 0.851];
-            app.ContrastfunctionLabel.Position = [6 482 89 32];
+            app.ContrastfunctionLabel.Position = [9 563 169 35];
             app.ContrastfunctionLabel.Text = 'Contrast function';
 
             % Create ContrastfunctionDropDown
-            app.ContrastfunctionDropDown = uidropdown(app.DecompositionSettingsPanel);
-            app.ContrastfunctionDropDown.Items = {'logcosh', 'skew', 'kurtosis'};
-            app.ContrastfunctionDropDown.FontName = 'Avenir Next';
-            app.ContrastfunctionDropDown.FontSize = 13;
-            app.ContrastfunctionDropDown.FontWeight = 'bold';
+            app.ContrastfunctionDropDown = uidropdown(app.Panel);
+            app.ContrastfunctionDropDown.Items = {'skew', 'kurtosis', 'logcosh'};
+            app.ContrastfunctionDropDown.FontName = 'Poppins';
+            app.ContrastfunctionDropDown.FontSize = 18;
             app.ContrastfunctionDropDown.FontColor = [0.5608 0.6196 0.851];
             app.ContrastfunctionDropDown.BackgroundColor = [0.149 0.149 0.149];
-            app.ContrastfunctionDropDown.Position = [103 485 114 26];
-            app.ContrastfunctionDropDown.Value = 'logcosh';
+            app.ContrastfunctionDropDown.Position = [186 563 198 35];
+            app.ContrastfunctionDropDown.Value = 'skew';
+
+            % Create SetconfigurationButton
+            app.SetconfigurationButton = uibutton(app.Panel, 'push');
+            app.SetconfigurationButton.ButtonPushedFcn = createCallbackFcn(app, @SetconfigurationButtonPushed, true);
+            app.SetconfigurationButton.BackgroundColor = [0.149 0.149 0.149];
+            app.SetconfigurationButton.FontName = 'Poppins';
+            app.SetconfigurationButton.FontSize = 18;
+            app.SetconfigurationButton.FontColor = [0.8118 0.502 1];
+            app.SetconfigurationButton.Position = [15 701 180 45];
+            app.SetconfigurationButton.Text = 'Set configuration';
+
+            % Create SegmentsessionButton
+            app.SegmentsessionButton = uibutton(app.Panel, 'push');
+            app.SegmentsessionButton.ButtonPushedFcn = createCallbackFcn(app, @SegmentsessionButtonPushed, true);
+            app.SegmentsessionButton.BackgroundColor = [0.149 0.149 0.149];
+            app.SegmentsessionButton.FontName = 'Poppins';
+            app.SegmentsessionButton.FontSize = 18;
+            app.SegmentsessionButton.FontColor = [0.8118 0.502 1];
+            app.SegmentsessionButton.Position = [204 701 180 45];
+            app.SegmentsessionButton.Text = 'Segment session';
+
+            % Create tabs
+            app.tabs = uidropdown(app.UIFigure);
+            app.tabs.Items = {'DECOMPOSITION', 'MANUAL EDITING'};
+            app.tabs.ValueChangedFcn = createCallbackFcn(app, @tabsValueChanged, true);
+            app.tabs.FontName = 'Poppins';
+            app.tabs.FontSize = 24;
+            app.tabs.FontWeight = 'bold';
+            app.tabs.FontColor = [0.9608 0.9608 0.9608];
+            app.tabs.BackgroundColor = [0.149 0.149 0.149];
+            app.tabs.Position = [0 810 400 40];
+            app.tabs.Value = 'DECOMPOSITION';
 
             % Show the figure after all components are created
             app.UIFigure.Visible = 'on';

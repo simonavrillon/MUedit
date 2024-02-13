@@ -79,9 +79,9 @@ function [dlgbox, signal] = openIntan(path, file, dialog)
             posgrid(idxchan) = 1;
         end
     end
-    signal.emgnotgrid = signal.data(posgrid==0);
-    signal.data = signal.data(posgrid==1);
-    signal.nChan = size(signal.data,2);
+    signal.emgnotgrid = signal.data(posgrid==0,:);
+    signal.data = signal.data(posgrid==1,:);
+    signal.nChan = size(signal.data,1);
     ports = ports(~cellfun('isempty',ports));
         
     if dialog == 1
@@ -100,6 +100,7 @@ function [dlgbox, signal] = openIntan(path, file, dialog)
         if sum(strcmpi('B', ports)) == 1
             dlgbox.Lamp_B1.Color = 'Green';
             dlgbox.PortB1Panel.Enable = 'on';
+            dlgbox.CheckBox_B1.Value = 1;
             dlgbox.CheckBox_B1.Visible = 'off';
         end
         

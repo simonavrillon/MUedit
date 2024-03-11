@@ -16,6 +16,7 @@
 
 function [coordinates, IED, discardChannelsVec, emgtype] = formatsignalHDEMG(signal, gridname, fsamp, checkEMG)
 
+ch=1;
 for i = 1:length(gridname)
     % Define the parameters depending on the name of the grid
     if contains(gridname{i}, 'GR04MM1305') || contains(gridname{i}, 'HD04MM1305')
@@ -137,21 +138,22 @@ for i = 1:length(gridname)
     end
     
     % Notch filter and bandpassfilter before visualization
-    signal = notchsignals(signal,fsamp);
+    % signal = notchsignals(signal,fsamp);
     
     % Visual checking of EMG signals by column
     if checkEMG == 1
-        ch=1;
+        ch1 = 1;
         for c = 1:size(ElChannelMap,2)
             figure;
             lincol = colormap(turbo(size(ElChannelMap,1)));
             for r = 1:size(ElChannelMap,1)
-                if ch < length(discardChannelsVec{i}) + 1
+                if ch1 < length(discardChannelsVec{i}) + 1
                     plot(signal(ch,:)/max(signal(ch,:)) + r, 'Color', lincol(r,:), 'LineWidth', 1)
                     grid on
                     hold on
                     ylim([0 size(ElChannelMap,1)+1])
                     ch = ch+1;
+                    ch1 = ch1 + 1;
                 end
             end
             title(['Column#' num2str(c)], 'Color', [0.9412 0.9412 0.9412], 'FontName', 'Avenir Next', 'FontSize', 20)

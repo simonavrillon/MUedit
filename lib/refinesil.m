@@ -7,7 +7,7 @@ for i = 1:floor(length(PulseT)/fsamp)
     idx = find(spikes > 1+(i-1)*fsamp & spikes < i*fsamp);
     idx1 = find(distime > 1+(i-1)*fsamp & distime < i*fsamp);
 
-    if ~isempty(idx) && ~isempty(idx1)
+    if length(idx)>2 && length(idx1)>2
         [L,C,sumd,D] = kmeans(PulseT(spikes(idx))',2); % 4c: Kmean classification
         [~, idx2] = max(C); % Spikes should be in the class with the highest centroid
         within = sumd(idx2);

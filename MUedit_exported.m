@@ -152,6 +152,13 @@ classdef MUedit_exported < matlab.apps.AppBase
                     movegui(app.MUdecomp.config.UIFigure, 'center')
                     app.SetconfigurationButton.Enable = 'on';
                 end
+            elseif isequal(C{end}, 'otb4') % OT Biolab24
+                [app.MUdecomp.config, signal] = OpenOTB4(app.pathname, app.filename, 0);
+                if ~isempty(app.MUdecomp.config)
+                    app.MUdecomp.config.UIFigure.Visible = 'off';
+                    movegui(app.MUdecomp.config.UIFigure, 'center')
+                    app.SetconfigurationButton.Enable = 'on';
+                end
             elseif isequal(C{end}, 'rhd') % RHD Intan Tech
                 [app.MUdecomp.config, signal] = openIntan(app.pathname, app.filename, 1);
                 if ~isempty(app.MUdecomp.config)

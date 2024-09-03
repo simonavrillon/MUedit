@@ -20,4 +20,5 @@ Dr. Simon Avrillon
  / E-mail address: s.avrillon@imperial.ac.uk
 
 If you use MUedit in your experimental setting, please cite the following preprint.
->Avrillon S, Hug F, Gibbs C & Farina D. (2023). Tutorial on MUedit: An open-source software for identifying and analysing the discharge timing of motor units from electromyographic signals. bioRxiv, 2023.2007.2013.548568.
+>	Avrillon, S., Hug, F., Baker, S.N., Gibbs, C., and Farina, D. (2024). Tutorial on MUedit: An open-source software for identifying and analysing the discharge timing of motor units from electromyographic signals. J Electromyogr Kinesiol 77, 102886. 10.1016/j.jelekin.2024.102886.
+

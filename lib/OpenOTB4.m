@@ -4,259 +4,164 @@
 % It isn't possible to read OTB and OTB+ files because the 
 % internal structure of these files is different.
 
-function [dlgbox, signal] = openOTB4(path, file, dialog)
+function [dlgbox, signal] = OpenOTB4(path, file, dialog)
 
 % Make new folder
 mkdir('tmpopen');  
-%cd('tempopen');
 
 % Extract contents of tar file
 untar([path file],'tmpopen');
-signals = dir(fullfile('tmpopen','*.sig')); %List folder contents and build full file name from parts
 
-nChannel{1}=0;
-nCh=zeros(1,length(signals)-1);
-Fs=zeros(1,length(signals)-1);
-abstracts=['Tracks_000.xml'];
-abs = xml2struct(fullfile('.','tmpopen',abstracts));
-AUX_index = -1;
-EMG_index = zeros(1,[length(abs.ArrayOfTrackInfo.TrackInfo)]);
-EMG_nchannel = zeros(1,[length(abs.ArrayOfTrackInfo.TrackInfo)]);
-counter = 1;
-AUX_Subtitle = "";
-for ntype=1:length(abs.ArrayOfTrackInfo.TrackInfo)
-        device = textscan(abs.ArrayOfTrackInfo.TrackInfo{1,1}.Device.Text, '%s', 1, 'Delimiter', ';');
-        device = device{1}{1};
-        Gains{ntype}=str2num(abs.ArrayOfTrackInfo.TrackInfo{1,ntype}.Gain.Text);
-        nADBit{ntype}=str2num(abs.ArrayOfTrackInfo.TrackInfo{1,ntype}.ADC_Nbits.Text);
-        PowerSupply{ntype}=str2num(abs.ArrayOfTrackInfo.TrackInfo{1,ntype}.ADC_Range.Text);
-        Fsample{ntype}=str2num(abs.ArrayOfTrackInfo.TrackInfo{1,ntype}.SamplingFrequency.Text);
-        Path{ntype}=abs.ArrayOfTrackInfo.TrackInfo{1,ntype}.SignalStreamPath.Text;
-        nChannel{ntype+1}=str2num(abs.ArrayOfTrackInfo.TrackInfo{1,ntype}.NumberOfChannels.Text);
-        startIndex{ntype}=str2num(abs.ArrayOfTrackInfo.TrackInfo{1,ntype}.AcquisitionChannel.Text);
-        Title{ntype}=abs.ArrayOfTrackInfo.TrackInfo{1,ntype}.Title.Text;
-    
-        channels = str2num(abs.ArrayOfTrackInfo.TrackInfo{1,ntype}.NumberOfChannels.Text);
-        %there is no adapter index in the new .otb4 file so we create
-        %something similar using available information
-        if(channels == 32 || channels == 64)
-            for i = counter:(counter + channels - 1)
-                EMG_index(i) = startIndex{ntype}; %contains index of connector (adapter)
-                EMG_nchannel(i) = channels; % contains n° of channels in that adapter
-            end            
-            counter = counter + channels;
-        end
-        if Title{ntype} == "Direct connection to Auxiliary Input"
-            AUX_index = startIndex{ntype};
-            AUX_Subtitle = abs.ArrayOfTrackInfo.TrackInfo{1,ntype}.SubTitle.Text;        
-        end   
-        
-        if(channels >= 32) 
-            signal.gridname{ntype} = abs.ArrayOfTrackInfo.TrackInfo{1,ntype}.SubTitle.Text;
-        end
-end 
+% Read XML
+abstracts = 'Tracks_000.xml';
+abs = xml2struct(fullfile('tmpopen', abstracts));
+TI = abs.ArrayOfTrackInfo.TrackInfo;
+nTrack = length(TI);
 
-TotCh = sum(cell2mat(nChannel));
+% Pre-allocate metadata arrays
+Gains       = cell(1, nTrack);
+nADBit      = cell(1, nTrack);
+PowerSupply = cell(1, nTrack);
+Fsample     = cell(1, nTrack);
+Path        = cell(1, nTrack);
+nChannel       = cell(1, nTrack);
+startIndex     = cell(1, nTrack);
+ChannelsInBlock = cell(1, nTrack);
+Title          = cell(1, nTrack);
 
-if strcmp(device,'Novecento+')
-    for i = 2:length(signals)
-        flag = false;
-        for j = 1:length(Path)
-            if(strcmp(Path(j), signals(i).name))
-                nCh(i-1) = nCh(i-1) + nChannel{j+1};
-                Fs(i-1) = Fsample{j};
-                Psup(i-1) = PowerSupply{j};
-                ADbit(i-1) = nADBit{j};
-                Gain(i-1) = Gains{j};
-                flag = true;
+isEMG        = false(1, nTrack);  % tracks whose title starts with "IN"
+isAUX        = false(1, nTrack);  % tracks whose title starts with "AUX" or contains "Quaternions"
+signal.gridname = {};
+signal.muscle   = {};
+signal.auxiliaryname = {};
+
+% Read device name once (same for all tracks)
+device = textscan(TI{1}.Device.Text, '%s', 1, 'Delimiter', ';');
+device = device{1}{1};
+
+% Parse per-track XML metadata
+for n = 1:nTrack
+    Gains{n}       = str2double(TI{n}.Gain.Text);
+    nADBit{n}      = str2double(TI{n}.ADC_Nbits.Text);
+    PowerSupply{n} = str2double(TI{n}.ADC_Range.Text);
+    Fsample{n}     = str2double(TI{n}.SamplingFrequency.Text);
+    Path{n}        = TI{n}.SignalStreamPath.Text;
+    nChannel{n}        = str2double(TI{n}.NumberOfChannels.Text);
+    startIndex{n}      = str2double(TI{n}.AcquisitionChannel.Text);
+    ChannelsInBlock{n} = str2double(TI{n}.ChannelsInBlock.Text);
+    Title{n} = TI{n}.Description.Name.Text;
+    SubTitle{n} = TI{n}.SubTitle.Text;
+
+    % EMG: title starts with "HD"
+    if strncmpi(Title{n}, 'HD', 2) || strncmpi(Title{n}, 'GR', 2)
+        isEMG(n) = true;
+        signal.gridname{end+1} = Title{n};
+    end
+
+    % AUX: title starts with "AUX" or contains "Quaternions"
+    if strncmpi(Title{n}, 'AUX', 3) || strncmpi(SubTitle{n}, 'AUX', 3) || contains(Title{n}, 'Quaternions', 'IgnoreCase', true)
+        isAUX(n) = true;
+    end
+end
+
+if ~any(isEMG) && ~any(isAUX)
+    rmdir('tmpopen', 's');
+    error('OpenOTB4:noData', 'No EMG or AUX tracks found in %s.', file);
+end
+
+% Load signal data: read each .sig file once, then slice per track
+data    = [];
+emgRows = [];
+auxRows = [];
+r1      = 0;
+
+if strcmp(device, 'Novecento+')
+    % Each .sig file may hold multiple tracks; group and read once per file
+    uniquePaths = unique(Path, 'stable');
+    for f = 1:length(uniquePaths)
+        sigName  = uniquePaths{f};
+        idx      = find(strcmp(Path, sigName));
+        if ~any(isEMG(idx) | isAUX(idx)); continue; end
+        nChFile  = ChannelsInBlock{idx(1)};
+
+        h   = fopen(fullfile('tmpopen', sigName), 'r');
+        raw = fread(h, [nChFile, Inf], 'int32');
+        fclose(h);
+        nSamples = size(raw, 2);
+
+        for k = idx
+            if ~(isEMG(k) || isAUX(k)); continue; end
+            block = raw(startIndex{k}+1 : startIndex{k}+nChannel{k}, :);
+            if nADBit{k} > 0
+                block = block * PowerSupply{k} / (2^nADBit{k}) * 1000 / Gains{k};
             end
-        end
-        if flag == true
-            h=fopen(fullfile('tmpopen', signals(i).name),'r');
-            data = fread(h,[nCh(i-1) Inf],'int32');
-            fclose(h);
-
-            Data{i-1}=data;
-            figs{i-1}=figure;
-            for Ch=1:nCh(i-1)
-                data(Ch,:)=data(Ch,:)*Psup(i-1)/(2^ADbit(i-1))*1000/Gain(i-1);
-            end  
+            r0 = r1 + 1;  r1 = r1 + nChannel{k};
+            data(r0:r1, 1:nSamples) = block;
+            if isEMG(k)
+                emgRows = [emgRows, r0:r1]; %#ok<AGROW>
+            elseif isAUX(k)
+                auxRows = [auxRows, r0:r1]; %#ok<AGROW>
+            end
         end
     end
 else
-    for nSig = 1%:length(signals)
-        h=fopen(fullfile('tmpopen', signals(nSig).name),'r');
-        data=fread(h,[TotCh Inf],'short'); 
-        fclose(h);
-     
-        Data{nSig}=data;
-        figs{nSig}=figure;
-
-        sumidx = nChannel{1};
-        idx = zeros(1, length(nChannel));
-        idx(1) = sumidx;
-        for i = 2:length(nChannel)
-            sumidx = sumidx + nChannel{i};
-            idx(i) = sumidx;
-        end
-        for ntype=2:length(abs.ArrayOfTrackInfo.TrackInfo)+1
-            for nCh=idx(ntype-1)+1:idx(ntype)
-                data(nCh,:)=data(nCh,:)*PowerSupply{ntype-1}/(2^nADBit{ntype-1})*1000/Gains{ntype-1};
-            end
-        end
-    end   
-end
-
-Gains = zeros(1,TotCh);
-Adapter = zeros(1,TotCh);
-Posdev = zeros(1,TotCh);
-Grid = cell(1,TotCh);
-Muscle = cell(1,TotCh);
-
-%fill the adapter array similarly to the openOTB+ script
-Adapter = zeros(1,TotCh);
-for i = 1:length(EMG_index)
-    value = 3; % 32 channels
-    if EMG_nchannel(i) == 64
-        value = 4; % 64 channels
+    % Standard devices: single .sig file, int16, all tracks interleaved
+    sigFiles = dir(fullfile('tmpopen', '*.sig'));
+    if isempty(sigFiles)
+        error('OpenOTB4:noSigFile', 'No .sig file found in archive.');
     end
-    Adapter(i) = value;        
-end
+    TotCh = sum(cell2mat(nChannel));
 
-signal.data = data(Adapter == 3 | Adapter == 4,:);
-if AUX_index ~= -1 
-    signal.auxiliary = data(AUX_index,:);
-end
+    h   = fopen(fullfile('tmpopen', sigFiles(1).name), 'r');
+    raw = fread(h, [TotCh, Inf], 'short');
+    fclose(h);
+    nSamples = size(raw, 2);
 
-if ~isempty(data(Adapter < 3,:))
-    signal.emgnotgrid = data(Adapter < 3,:);
-end
-
-nch = 1;
-nch2 = 1;
-for i = 1:length(Grid)
-    if Adapter(i) == 3 || Adapter(i) == 4
-        Grid2{nch} = Grid{i};
-        Muscle2{nch} = Muscle{i};
-        nch = nch + 1;
-    elseif Adapter(i) == 5
-        signal.auxiliaryname{nch2} =  Grid{i};
-        nch2 = nch2 + 1;
+    for n = 1:nTrack
+        if ~(isEMG(n) || isAUX(n)); continue; end
+        block = raw(startIndex{n}+1 : startIndex{n}+nChannel{n}, :);
+        if nADBit{n} > 0
+            block = block * PowerSupply{n} / (2^nADBit{n}) * 1000 / Gains{n};
+        end
+        r0 = r1 + 1;  r1 = r1 + nChannel{n};
+        data(r0:r1, 1:nSamples) = block;
+        if isEMG(n)
+            emgRows = [emgRows, r0:r1];
+        elseif isAUX(n)
+            auxRows = [auxRows, r0:r1];
+        end
     end
 end
-clearvars Grid Muscle
-Grid = Grid2;
-%Muscle = Muscle2; removed because muscle are missing from OTB4 file at the
-%moment
 
-signal.fsamp=Fsample{1};
-signal.nChan=TotCh;
-Posdev = Posdev(Adapter == 3 | Adapter == 4);
+signal.data = data(emgRows, :);
+if ~isempty(auxRows)
+    signal.auxiliary = data(auxRows, :);
+end
 
-idxa = unique(Posdev);
-%idxb = unique(Muscle);
+% Sampling rate from first EMG track; fall back to track 1
+emgTrack = find(isEMG, 1);
+if ~isempty(emgTrack)
+    signal.fsamp = Fsample{emgTrack};
+else
+    signal.fsamp = Fsample{1};
+end
 
+signal.nChan = size(signal.data, 1);
 signal.ngrid = length(signal.gridname);
-%signal.ngrid = length(idxa);  
-%for i=1:signal.ngrid
-    %idx = find(Posdev == (idxa(i)), 1, 'First');
-    %signal.gridname{i} = Grid{idx};
-    %signal.muscle{i} = Muscle{idx};
-%end
 
-if ~contains(device, 'QUATTROCENTO')
-    idxa = 1:1:length(idxa);
-    idxa = idxa+2;
-end
-
-
-% if the signals were recorded with a feedback generated by OTBiolab+,
-% get the target and the path performed by the participant
-target = dir(fullfile('tmpopen','*.sip'));
-
-if ~isempty(target)
-    h=fopen(fullfile('tmpopen',target(2).name),'r');
-    data1=fread(h,[1 Inf],'float64');
-    fclose(h);
-    data1 = data1(1:size(data,2));
-    signal.path = data1;
-
-    h=fopen(fullfile('tmpopen',target(3).name),'r');
-    data2=fread(h,[1 Inf],'float64');
-    fclose(h);
-    data2 = data2(1:size(data,2));
-    signal.target = data2;
-
-    if isfield(signal, 'auxiliary')
-        signal.auxiliary = [signal.auxiliary; signal.path; signal.target];
-        signal.auxiliaryname = AUX_Subtitle; % cat(2, signal.auxiliaryname, {'Path'}, {'Target'});
-    else
-        signal.auxiliary = [signal.path; signal.target];
-        signal.auxiliaryname = cat(2, {'Path'}, {'Target'});
+if isfield(signal, 'auxiliary')
+    for i = 1:signal.ngrid*4
+        signal.auxiliaryname{i} = 'Quaternions';
+    end
+    auxn=1;
+    for j = i+1:size(signal.auxiliary,1)
+        signal.auxiliaryname{j} = ['AUX' num2str(auxn)];
+        auxn = auxn + 1;
     end
 end
 
+dlgbox = [];
+% Clean Folder
 rmdir('tmpopen','s');
 
-if dialog == 1
-    % Set the configuration
-    dlgbox = Quattrodlg;
-    dlgbox.EditField_nchan.Value = size(signal.data,1);
-    
-    if find(idxa == 1)
-        dlgbox.CheckBox_S1.Value = 1;
-        dlgbox.CheckBox_S1.Visible = 'off';
-        dlgbox.Splitter1Panel.Enable = 'on';
-        dlgbox.Lamp_S1.Color = 'Green';
-        dlgbox.DropDown_S1.Value = signal.gridname{idxa == 1};
-        dlgbox.EditField_S1.Value = signal.muscle{idxa == 1};
-    end
-    
-    if find(idxa == 2)
-        dlgbox.CheckBox_S2.Value = 1;
-        dlgbox.CheckBox_S2.Visible = 'off';
-        dlgbox.Splitter2Panel.Enable = 'on';
-        dlgbox.Lamp_S2.Color = 'Green';
-        dlgbox.DropDown_S2.Value = signal.gridname{idxa == 2};
-        dlgbox.EditField_S2.Value = signal.muscle{idxa == 2};
-    end
-    
-    if find(idxa == 3)
-        dlgbox.CheckBox_M1.Value = 1;
-        dlgbox.CheckBox_M1.Visible = 'off';
-        dlgbox.MI1Panel.Enable = 'on';
-        dlgbox.Lamp_M1.Color = 'Green';
-        dlgbox.DropDown_M1.Value = signal.gridname{idxa == 3};
-        dlgbox.EditField_M1.Value = signal.muscle{idxa == 3};
-    end
-    
-    if find(idxa == 4)
-        dlgbox.CheckBox_M2.Value = 1;
-        dlgbox.CheckBox_M2.Visible = 'off';
-        dlgbox.MI2Panel.Enable = 'on';
-        dlgbox.Lamp_M2.Color = 'Green';
-        dlgbox.DropDown_M2.Value = signal.gridname{idxa == 4};
-        dlgbox.EditField_M2.Value = signal.muscle{idxa == 4};
-    end
-    
-    if find(idxa == 5)
-        dlgbox.CheckBox_M3.Value = 1;
-        dlgbox.CheckBox_M3.Visible = 'off';
-        dlgbox.MI3Panel.Enable = 'on';
-        dlgbox.Lamp_M3.Color = 'Green';
-        dlgbox.DropDown_M3.Value = signal.gridname{idxa == 5};
-        dlgbox.EditField_M3.Value = signal.muscle{idxa == 5};
-    end
-    
-    if find(idxa == 6)
-        dlgbox.CheckBox_M4.Value = 1;
-        dlgbox.CheckBox_M4.Visible = 'off';
-        dlgbox.MI4Panel.Enable = 'on';
-        dlgbox.Lamp_M4.Color = 'Green';
-        dlgbox.DropDown_M4.Value = signal.gridname{idxa == 6};
-        dlgbox.EditField_M4.Value = signal.muscle{idxa == 6};
-    end    
-else
-    dlgbox = [];
-end
 end

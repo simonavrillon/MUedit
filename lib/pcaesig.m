@@ -30,6 +30,8 @@ end
 maxLastEig = sum(diag(D) > rankTolerance);
 if maxLastEig < size(signal, 1)
   lowerLimitValue = (eigenvalues(maxLastEig) + eigenvalues(maxLastEig + 1)) / 2;
+else
+  lowerLimitValue = rankTolerance;
 end
 
 % Select the colums which correspond to the desired range

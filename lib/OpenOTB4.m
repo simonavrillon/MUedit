@@ -106,9 +106,9 @@ if strcmp(device, 'Novecento+')
             r0 = r1 + 1;  r1 = r1 + nChannel{k};
             data(r0:r1, 1:nSamples) = block;
             if isEMG(k)
-                emgRows = [emgRows, r0:r1]; %#ok<AGROW>
+                emgRows = [emgRows, r0:r1];
             elseif isAUX(k)
-                auxRows = [auxRows, r0:r1]; %#ok<AGROW>
+                auxRows = [auxRows, r0:r1];
             end
         end
     end

@@ -50,7 +50,7 @@ parameters.ref_exist = 0; % if ref_signal exist ref_exist = 1; if not ref_exist 
 parameters.checkEMG = 0; % 0 = Consider all the channels ; 1 = Visual checking
 parameters.nwindows = 1; % number of segmented windows over each contraction
 parameters.differentialmode = 0; % 0 = no; 1 = yes (filter out the smallest MU, can improve decomposition at the highest intensities
-parameters.initialization = 1; % 0 = max EMG; 1 = random weights
+parameters.initialization = 1; % 1 = max EMG; 0 = random weights
 parameters.peeloff = 1; % 0 = no; 1 = yes (update the residual EMG by removing the motor units with the highest SIL value)
 parameters.covfilter = 0; % 0 = no; 1 = yes (filter out the motor units with a coefficient of variation of their ISI > than parameters.covthr)
 parameters.refineMU = 0; % 0 = no; 1 = yes (refine the MU spike train over the entire signal 1-remove the discharge times that generate outliers in the discharge rate and 2- reevaluate the MU pulse train)
@@ -198,7 +198,7 @@ idx1 = zeros(1, parameters.NITER);
 for j = 1:parameters.NITER
 if j == 1
     signalprocess.X = signalprocess.wSIG{nwin}; % Initialize X (whitened signal), then X: residual
-    if parameters.initialization == 0
+    if parameters.initialization == 1
         actind = sum(signalprocess.X,1).^2;
         [~, idx1(j)] = max(actind);
         signalprocess.w = signalprocess.X(:, idx1(j)); % Initialize w
@@ -207,7 +207,7 @@ if j == 1
     end
     time = linspace(0,size(signalprocess.X,2)/signal.fsamp,size(signalprocess.X,2));
 else
-    if parameters.initialization == 0
+    if parameters.initialization == 1
         actind(idx1(j-1)) = 0; % remove the previous vector
         [~, idx1(j)] = max(actind);
         signalprocess.w = signalprocess.X(:, idx1(j)); % Initialize w

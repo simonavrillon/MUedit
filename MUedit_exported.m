@@ -1096,7 +1096,7 @@ classdef MUedit_exported < matlab.apps.AppBase
             EMG = EMG(app.MUedition.signal.EMGmask{str2double(C{2})}==0,idx);
             EMG = bandpassingals(EMG, app.MUedition.signal.fsamp, app.MUedition.signal.emgtype(str2double(C{2})));
             spikes1 = intersect(idx(round(0.1*app.MUedition.signal.fsamp):end-round(0.1*app.MUedition.signal.fsamp)),app.MUedition.edition.Dischargetimes{str2double(C{2}),str2double(C{4})});
-            spikes2 = (spikes1 - idx(1));
+            spikes2 = (spikes1 - idx(1) + 1);
             exFactor1 = round(nbextchan/size(EMG,1));
             eSIG = extend(EMG,exFactor1);
             ReSIG = eSIG*eSIG'/length(eSIG);
@@ -1118,7 +1118,7 @@ classdef MUedit_exported < matlab.apps.AppBase
             spikes2(Pt(spikes2)>mean(Pt(spikes2))+3*std(Pt(spikes2))) = []; % remove the outliers of the pulse train for the calculation of the filter
 
             if app.Backup.lock == 1
-                spikeso = spikes1 - idx(1);
+                spikeso = spikes1 - idx(1) + 1;
                 for i = 1:length(spikeso)
                    [~, imax] = max(Pt(spikeso(i) - 10: spikeso(i) + 10));
                    spikeso(i) = spikeso(i) + imax - 11;

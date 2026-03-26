@@ -152,7 +152,7 @@ classdef MUedit_exported < matlab.apps.AppBase
                     movegui(app.MUdecomp.config.UIFigure, 'center')
                     app.SetconfigurationButton.Enable = 'on';
                 end
-            elseif isequal(C{end}, 'otb4') % OT Biolab24
+            elseif isequal(C{end}, 'otb4') % OTB4
                 [app.MUdecomp.config, signal] = OpenOTB4(app.pathname, app.filename, 0);
                 if ~isempty(app.MUdecomp.config)
                     app.MUdecomp.config.UIFigure.Visible = 'off';

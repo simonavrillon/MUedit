@@ -71,10 +71,13 @@ parameters.CoVDR = 0.3; % threshold that define the CoV of Discharge rate that w
 %% Step 0: Load the HDsEMG data
 %       0a: determine the number and type of grids
 C = strsplit(parameters.filename,'.');
+
 if isequal(C{end}, 'mat')
-    load([parameters.pathname parameters.filename], 'signal');
-else
+    load([parameters.pathname parameters.filename]);
+elseif isequal(C{end}, 'otb+') % OT Biolab+
     [~, signal] = openOTBplus(parameters.pathname, parameters.filename,0);
+elseif isequal(C{end}, 'otb4') % OTB4
+    [~, signal] = OpenOTB4(parameters.pathname, parameters.filename, 0);
 end
 
 [signal.coordinates, signal.IED, signal.EMGmask, signal.emgtype] = formatsignalHDEMG(signal.data, signal.gridname, signal.fsamp, parameters.checkEMG);

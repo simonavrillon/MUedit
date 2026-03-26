@@ -1,8 +1,16 @@
-% Reads files of type OTB4, extrapolating the information on the signal,
-% in turn uses the xml2struct function to read file.xml 
-% and allocate them in an easily readable Matlab structure.
-% It isn't possible to read OTB and OTB+ files because the 
-% internal structure of these files is different.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% To load EMG signals from otb4 files
+
+% Input: 
+% path: path name
+% file: file name
+% dialog: 1 = Open a dialog window with the configuration of the recording
+
+% Output:
+% signal: structure with the EMG signals
+% dlgbox: dialog window with the configuration
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function [dlgbox, signal] = OpenOTB4(path, file, dialog)
 

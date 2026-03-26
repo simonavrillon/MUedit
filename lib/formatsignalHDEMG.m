@@ -5,13 +5,14 @@
 % Input: 
 % signal: row-wise signal
 % gridname: name of the OTB grid of electrodes
+% fsamp: sampling frequency of the signal
 % check EMG: 1 = Visual checking of EMG channels
 
 % Output:
 % coordinates: x and y coordinates of each electrode
 % IED: inter electrode distance
 % discardChannelsVec: vector of discarded channels after visual checking (1 = discarded channel);
-
+% emgtype: 1 = surface, 2 = intra
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function [coordinates, IED, discardChannelsVec, emgtype] = formatsignalHDEMG(signal, gridname, fsamp, checkEMG)
@@ -209,6 +210,7 @@ for i = 1:length(gridname)
     
     % Notch filter and bandpassfilter before visualization
     signal = notchsignals(signal,fsamp);
+    signal = bandpassingals(signal, fsamp, emgtype(i));
     
     % Visual checking of EMG signals by column
     if checkEMG == 1

@@ -23,7 +23,7 @@ function [PulseT, distime] = extendfilter(EMG, EMGmask, PulseT, distime, idx, fs
     EMG = bandpassingals(EMG, fsamp, EMGtype);
     spikes1 = intersect(idx(round(0.1*fsamp):end-round(0.1*fsamp)), distime);
     if ~isempty(spikes1)
-        spikes2 = (spikes1 - idx(1));
+        spikes2 = (spikes1 - idx(1) + 1);
         exFactor1 = round(nbextchan/size(EMG,1));
         eSIG = extend(EMG,exFactor1);
         ReSIG = eSIG*eSIG'/length(eSIG);

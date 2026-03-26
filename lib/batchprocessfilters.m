@@ -36,7 +36,7 @@ for nwin = 1:size(wSIG,2)
             PulseT(MUnb,coordinates(nwin2*2-1):coordinates(nwin2*2)+exFactor-1-differentialmode) = MUFilters{nwin}(:,j)'  * wSIG{nwin2};
         end  
         PulseT(MUnb,:) = PulseT(MUnb,:) .* abs(PulseT(MUnb,:));
-        [~,spikes] = findpeaks(PulseT(MUnb,:), 'MinPeakDistance', round(fsamp*0.005)); % Peak detection
+        [~,spikes] = findpeaks(PulseT(MUnb,:), 'MinPeakDistance', round(fsamp*0.02)); % Peak detection
         PulseT(MUnb,:) = PulseT(MUnb,:)/mean(maxk(PulseT(MUnb,spikes),10));
         [L,C] = kmeans(PulseT(MUnb,spikes)',2); % Kmean ++ classification
         [~, idx] = max(C); % Determine highest centroid

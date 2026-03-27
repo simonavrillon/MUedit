@@ -1099,13 +1099,27 @@ classdef MUedit_exported < matlab.apps.AppBase
             spikes2 = (spikes1 - idx(1) + 1);
             exFactor1 = round(nbextchan/size(EMG,1));
             eSIG = extend(EMG,exFactor1);
-            ReSIG = eSIG*eSIG'/length(eSIG);
-            iReSIGt = pinv(ReSIG);
             [E, D] = pcaesig(eSIG);
-            [wSIG, ~, dewhiteningMatrix] = whiteesig(eSIG, E, D);
+            [wSIG, ~, ~] = whiteesig(eSIG, E, D);
+
+            % Peeloff: subtract contributions of other MUs on the same grid
+            grid_id = str2double(C{2});
+            mu_current = str2double(C{4});
+            peeloffwin = 0.025;
+            edge_len = round(0.1 * app.MUedition.signal.fsamp);
+            for mu = 1:size(app.MUedition.edition.Dischargetimes, 2)
+                if mu == mu_current, continue; end
+                mu_dt = app.MUedition.edition.Dischargetimes{grid_id, mu};
+                if isempty(mu_dt) || all(ismember([1 app.MUedition.signal.fsamp], mu_dt)), continue; end
+                mu_spikes = intersect(idx, mu_dt) - idx(1) + 1;
+                mu_spikes = mu_spikes(mu_spikes > edge_len & mu_spikes <= length(idx) - edge_len);
+                if isempty(mu_spikes), continue; end
+                wSIG = peeloff(wSIG, mu_spikes, app.MUedition.signal.fsamp, peeloffwin);
+            end
+
             MUFilters = sum(wSIG(:,spikes2),2);
 
-            Pt = ((dewhiteningMatrix * MUFilters)' * iReSIGt) * eSIG; % Update the pulse train
+            Pt = MUFilters' * wSIG; % Update the pulse train on peeloff-cleaned whitened signal
             Pt= Pt(1:size(EMG,2));
             Pt([1:round(0.1*app.MUedition.signal.fsamp) end-round(0.1*app.MUedition.signal.fsamp):end]) = 0; % Remove the edges
             Pt = Pt .* abs(Pt); % Normalized and update the pulse train
@@ -1455,7 +1469,7 @@ classdef MUedit_exported < matlab.apps.AppBase
                 end
                 for j = 1:size(app.MUedition.edition.Pulsetrain{i},1)
                     idx = size(app.MUedition.edition.Pulsetrain{i},1)+1-j;
-                    if length(app.MUedition.edition.Dischargetimes{i,idx}) == 2 && mean(app.MUedition.edition.Pulsetrain{i}(idx,:)) == 0
+                    if length(app.MUedition.edition.Dischargetimes{i,idx}) < 3
                         app.MUedition.edition.Distimeclean{i}{idx} = [];
                         app.MUedition.edition.silvalclean{i}{idx} = [];
                         app.MUedition.edition.silvalconclean{i}{idx} = [];
@@ -1539,7 +1553,9 @@ classdef MUedit_exported < matlab.apps.AppBase
                 for j = 1:size(app.MUedition.edition.Pulsetrain{i},1)
                     app.MUedition.edition.Distimeclean{i}{j} = app.MUedition.edition.Dischargetimes{i,j};
                 end
-                [app.MUedition.edition.Pulsetrainclean{i}, app.MUedition.edition.Distimeclean{i}] = remduplicates(app.MUedition.edition.Pulsetrainclean{i}, app.MUedition.edition.Distimeclean{i}, app.MUedition.edition.Distimeclean{i}, round(app.MUedition.signal.fsamp/40), 0.00025, app.DuplicatethresholdEditField.Value, app.MUedition.signal.fsamp);
+                if ~isempty(app.MUedition.edition.Pulsetrainclean{i})
+                    [app.MUedition.edition.Pulsetrainclean{i}, app.MUedition.edition.Distimeclean{i}] = remduplicates(app.MUedition.edition.Pulsetrainclean{i}, app.MUedition.edition.Distimeclean{i}, app.MUedition.edition.Distimeclean{i}, round(app.MUedition.signal.fsamp/40), 0.00025, app.DuplicatethresholdEditField.Value, app.MUedition.signal.fsamp);
+                end
             end
 
             app.MUedition.edition.Dischargetimes = {};
@@ -1694,17 +1710,18 @@ classdef MUedit_exported < matlab.apps.AppBase
         function PlotMUspiketrainsButtonPushed(app, event)
             for i = 1:size(app.MUedition.edition.Pulsetrain,2)
                 firings = nan(size(app.MUedition.edition.Pulsetrain{i}));
+                j = 0;
                 for j = 1:size(app.MUedition.edition.Pulsetrain{i},1)
                     firings(j,app.MUedition.edition.Dischargetimes{i,j}) = j;
                 end
                 subplot(1,app.MUedition.signal.ngrid,i)
                 plot(app.MUedition.edition.time,firings,'|','MarkerSize', 10, 'Color', [0.9412 0.9412 0.9412])
                 hold on
-                plot(app.MUedition.edition.time,app.MUedition.signal.target/max(app.MUedition.signal.target)*j,'--','LineWidth',1,'Color',[0.85 0.33 0.10]);
+                plot(app.MUedition.edition.time,app.MUedition.signal.target/max(app.MUedition.signal.target)*max(j,1),'--','LineWidth',1,'Color',[0.85 0.33 0.10]);
                 title(['Array#' num2str(i) ' with ' num2str(j) ' MUs'], 'Color', [0.9412 0.9412 0.9412], 'FontName', 'Avenir Next')
                 xlabel('Time (s)', 'FontName', 'Avenir Next')
                 ylabel('MU#', 'FontName', 'Avenir Next')
-                ylim([0 j+1])
+                ylim([0 max(j,1)+1])
                 set(gcf,'Color', [0.15 0.15 0.15]);
                 set(gcf,'units','normalized','outerposition',[0 0 1 1])
                 set(gca,'Color', [0.15 0.15 0.15], 'XColor', [0.9412 0.9412 0.9412], 'YColor', [0.9412 0.9412 0.9412]);
@@ -1715,15 +1732,23 @@ classdef MUedit_exported < matlab.apps.AppBase
         % Button pushed function: PlotMUfiringratesButton
         function PlotMUfiringratesButtonPushed(app, event)
             C = strsplit(app.MUdisplayedDropDown.Value,'_');
+            if length(C) >= 4
+                selArray = str2double(C{2});
+                selMU = str2double(C{4});
+            else
+                selArray = -1;
+                selMU = -1;
+            end
             win = hann(app.MUedition.signal.fsamp);
             for i = 1:size(app.MUedition.edition.Pulsetrain,2)
                 firings = zeros(size(app.MUedition.edition.Pulsetrain{i}));
                 smoothdr = zeros(size(app.MUedition.edition.Pulsetrain{i}));
                 subplot(1,app.MUedition.signal.ngrid,i)
+                j = 0;
                 for j = 1:size(app.MUedition.edition.Pulsetrain{i},1)
                     firings(j,app.MUedition.edition.Dischargetimes{i,j}) = 1;
                     smoothdr(j,:) = conv(firings(j,:),win,'same');
-                    if i == str2double(C{2}) && j == str2double(C{4})
+                    if i == selArray && j == selMU
                         plot(app.MUedition.edition.time,smoothdr(j,:), 'Color', [0.85 0.33 0.10], 'LineWidth', 3)
                         hold on
                     else
@@ -1760,7 +1785,7 @@ classdef MUedit_exported < matlab.apps.AppBase
                 end
                 for j = 1:size(app.MUedition.edition.Pulsetrain{i},1)
                     idx = size(app.MUedition.edition.Pulsetrain{i},1)+1-j;
-                    if length(app.MUedition.edition.Dischargetimes{i,idx}) == 2 && mean(app.MUedition.edition.Pulsetrain{i}(idx,:)) == 0
+                    if length(app.MUedition.edition.Dischargetimes{i,idx}) < 3
                         app.MUedition.edition.Distimeclean{i}{idx} = [];
                         app.MUedition.edition.Pulsetrainclean{i}(idx,:) = [];
                     end

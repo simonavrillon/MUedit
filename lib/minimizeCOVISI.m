@@ -41,3 +41,5 @@ end
 if length(spikeslast) < 2
     [~, spikeslast] = getspikes(w, X, fsamp); % save the last discharge times
 end
+
+wlast = wlast / norm(wlast); % Normalize the MU filter

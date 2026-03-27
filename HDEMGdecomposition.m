@@ -41,17 +41,17 @@ clear
 close all;
 clc;
 %% Input parameters
-parameters.pathname = '/Users/savrillo/Downloads/'; % add a '/' at the end for Mac OS, add a '\' at the end for Windows
-parameters.filename = '10_DF.otb+'; % filename.otb+ or filename.mat
+parameters.pathname = 'your path'; % add a '/' at the end for Mac OS, add a '\' at the end for Windows
+parameters.filename = 'your file'; % filename.otb+, filename.otb4 or filename.mat
 
 % DECOMPOSITION PARAMETERS
 parameters.NITER = 75;
 parameters.ref_exist = 0; % if ref_signal exist ref_exist = 1; if not ref_exist = 0 and manual selection of windows
-parameters.checkEMG = 0; % 0 = Consider all the channels ; 1 = Visual checking
+parameters.checkEMG = 1; % 0 = Consider all the channels ; 1 = Visual checking
 parameters.nwindows = 1; % number of segmented windows over each contraction
 parameters.differentialmode = 0; % 0 = no; 1 = yes (filter out the smallest MU, can improve decomposition at the highest intensities
-parameters.initialization = 1; % 1 = max EMG; 0 = random weights
-parameters.peeloff = 1; % 0 = no; 1 = yes (update the residual EMG by removing the motor units with the highest SIL value)
+parameters.initialization = 0; % 1 = max EMG; 0 = random weights
+parameters.peeloff = 0; % 0 = no; 1 = yes (update the residual EMG by removing the motor units with the highest SIL value)
 parameters.covfilter = 0; % 0 = no; 1 = yes (filter out the motor units with a coefficient of variation of their ISI > than parameters.covthr)
 parameters.refineMU = 0; % 0 = no; 1 = yes (refine the MU spike train over the entire signal 1-remove the discharge times that generate outliers in the discharge rate and 2- reevaluate the MU pulse train)
 parameters.drawingmode = 1; % 0 = Output in the command window ; 1 = Output in a figure

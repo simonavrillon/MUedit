@@ -1,5 +1,5 @@
 <deployment-project plugin="plugin.apptool" plugin-version="1.0">
-  <configuration build-checksum="1666584403" file="/Users/savrillo/Dev/MUedit-main/MUedit.prj" location="/Users/savrillo/Dev/MUedit-main" name="MUedit" target="target.mlapps" target-name="Package App">
+  <configuration build-checksum="159700263" file="/Users/savrillo/Dev/MUedit-main/MUedit.prj" location="/Users/savrillo/Dev/MUedit-main" name="MUedit" target="target.mlapps" target-name="Package App">
     <param.appname>MUedit</param.appname>
     <param.authnamewatermark />
     <param.email />
@@ -12,7 +12,7 @@
     </param.icons>
     <param.summary>App to decompose electromyographic signals and manually edit motor unit pulse trains.</param.summary>
     <param.description />
-    <param.screenshot>/private/var/folders/3w/f0qnm9h56gd5nbwm941rp9l40000gp/T/tp411ae7d7_8527_44d0_98ea_71c116e83cb8.png</param.screenshot>
+    <param.screenshot>/private/var/folders/3w/f0qnm9h56gd5nbwm941rp9l40000gp/T/tpe38e10d7_b69a_442f_ba50_2bfb35354704.png</param.screenshot>
     <param.version>1.3</param.version>
     <param.products.name>
       <item>MATLAB</item>

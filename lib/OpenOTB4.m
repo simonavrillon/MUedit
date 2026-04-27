@@ -95,9 +95,11 @@ for n = 1:nTrack
         isEMG(n) = true;
         % Extract grid name from Description.SensorType via regexp (e.g. "HD08MM1305")
         gridLabel = extractGridName(TI{n});
-        if ~isempty(gridLabel)
-            signal.gridname{end+1} = gridLabel;
+        if isempty(gridLabel)
+            gridLabel = 'Unknown';
+            warning('OpenOTB4: could not determine grid type for track %d, set to ''Unknown''.', n);
         end
+        signal.gridname{end+1} = gridLabel;
     end
 end
 
@@ -226,7 +228,7 @@ function gridName = extractGridName(track)
         end
     end
 
-    % 3. Description.Name (usually "Unknown", but try anyway)
+    % 3. Description.Name (might be "Unknown", but try anyway)
     if isfield(track, 'Description') && isfield(track.Description, 'Name')
         dn = track.Description.Name;
         if isfield(dn, 'Text'), dn = dn.Text; end
@@ -236,12 +238,5 @@ function gridName = extractGridName(track)
         end
     end
 
-    % 4. StringsDescriptions.OriginalAdapter (e.g. "BIO64HD" → "HD08MM1305")
-    if isfield(track, 'StringsDescriptions') && isfield(track.StringsDescriptions, 'OriginalAdapter')
-        oa = track.StringsDescriptions.OriginalAdapter;
-        if isfield(oa, 'Text'), oa = oa.Text; end
-        if ischar(oa) && contains(upper(oa), 'BIO64HD')
-            gridName = 'HD08MM1305';
-        end
-    end
+    % 4. Nothing found — return empty, caller will assign 'Unknown'
 end

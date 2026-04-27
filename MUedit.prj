@@ -1,5 +1,5 @@
 <deployment-project plugin="plugin.apptool" plugin-version="1.0">
-  <configuration build-checksum="1513213391" file="/Users/giova/Desktop/MUeditORIGINAL_edited_MUAPs/MUedit.prj" location="/Users/giova/Desktop/MUeditORIGINAL_edited_MUAPs" name="MUedit" target="target.mlapps" target-name="Package App">
+  <configuration build-checksum="2002023891" file="/Users/giova/Library/CloudStorage/OneDrive-Personale/GitHub/MUedit/MUedit.prj" location="/Users/giova/Library/CloudStorage/OneDrive-Personale/GitHub/MUedit" name="MUedit" target="target.mlapps" target-name="Package App">
     <param.appname>MUedit</param.appname>
     <param.authnamewatermark />
     <param.email />
@@ -12,7 +12,7 @@
     </param.icons>
     <param.summary>App to decompose electromyographic signals and manually edit motor unit pulse trains.</param.summary>
     <param.description />
-    <param.screenshot>/private/var/folders/cn/qhnp_h_12s7bl4hl3djxsl4w0000gn/T/tp4fa8022a_5860_42c7_81d1_534c64dbfb58.png</param.screenshot>
+    <param.screenshot>/private/var/folders/cn/qhnp_h_12s7bl4hl3djxsl4w0000gn/T/tpf2b09cee_f798_464c_92d1_09952a68dc12.png</param.screenshot>
     <param.version>1.2</param.version>
     <param.products.name>
       <item>MATLAB</item>
@@ -53,7 +53,7 @@
     </fileset.resources>
     <fileset.package />
     <build-deliverables>
-      <file location="/Users/giova/Desktop" name="MUeditORIGINAL_edited_MUAPs" optional="false">/Users/giova/Desktop/MUeditORIGINAL_edited_MUAPs</file>
+      <file location="/Users/giova/Library/CloudStorage/OneDrive-Personale/GitHub" name="MUedit" optional="false">/Users/giova/Library/CloudStorage/OneDrive-Personale/GitHub/MUedit</file>
     </build-deliverables>
     <workflow />
     <matlab>

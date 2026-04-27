@@ -1926,6 +1926,16 @@ classdef MUedit_exported < matlab.apps.AppBase
 
         % Window scroll wheel function: UIFigure
         function UIFigureWindowScrollWheel(app, event)
+            % Scroll wheel zoom/pan is only valid when edition mode is available.
+            if isequal(app.tabs.Value, 'DECOMPOSITION')
+                return;
+            end
+
+            if ~isstruct(app.MUedition) || ~isfield(app.MUedition, 'edition') || ...
+                    ~isfield(app.MUedition.edition, 'time') || isempty(app.MUedition.edition.time)
+                return;
+            end
+            
             switch app.scrollMode
                 case 'zoom'
                     if event.VerticalScrollCount > 0

@@ -1,7 +1,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % To load EMG signals from otb4 files
 
-% Input: 
+% Input:
 % path: path name
 % file: file name
 % dialog: 1 = Open a dialog window with the configuration of the recording
@@ -15,7 +15,7 @@
 function [dlgbox, signal] = OpenOTB4(path, file, dialog)
 
 % Make new folder
-mkdir('tmpopen');  
+mkdir('tmpopen');
 
 % Extract contents of tar file
 untar([path file],'tmpopen');
@@ -27,25 +27,24 @@ TI = abs.ArrayOfTrackInfo.TrackInfo;
 nTrack = length(TI);
 
 % Pre-allocate metadata arrays
-Gains       = cell(1, nTrack);
-nADBit      = cell(1, nTrack);
-PowerSupply = cell(1, nTrack);
-Fsample     = cell(1, nTrack);
-Path        = cell(1, nTrack);
-nChannel       = cell(1, nTrack);
-startIndex     = cell(1, nTrack);
-ChannelsInBlock = cell(1, nTrack);
-Title          = cell(1, nTrack);
+Gains        = cell(1, nTrack);
+nADBit       = cell(1, nTrack);
+PowerSupply  = cell(1, nTrack);
+Fsample      = cell(1, nTrack);
+Path         = cell(1, nTrack);
+nChannel     = cell(1, nTrack);
+startIndex   = cell(1, nTrack);
+TotChInFile  = cell(1, nTrack);
+SampleSize   = cell(1, nTrack);
+Title        = cell(1, nTrack);
 
-isEMG        = false(1, nTrack);  % tracks whose title starts with "IN"
-isAUX        = false(1, nTrack);  % tracks whose title starts with "AUX" or contains "Quaternions"
-signal.gridname = {};
-signal.muscle   = {};
+isControl    = false(1, nTrack);
+isQuaternion = false(1, nTrack);
+isEMG        = false(1, nTrack);
+
+signal.gridname      = {};
+signal.muscle        = {};
 signal.auxiliaryname = {};
-
-% Read device name once (same for all tracks)
-device = textscan(TI{1}.Device.Text, '%s', 1, 'Delimiter', ';');
-device = device{1}{1};
 
 % Parse per-track XML metadata
 for n = 1:nTrack
@@ -54,122 +53,195 @@ for n = 1:nTrack
     PowerSupply{n} = str2double(TI{n}.ADC_Range.Text);
     Fsample{n}     = str2double(TI{n}.SamplingFrequency.Text);
     Path{n}        = TI{n}.SignalStreamPath.Text;
-    nChannel{n}        = str2double(TI{n}.NumberOfChannels.Text);
-    startIndex{n}      = str2double(TI{n}.AcquisitionChannel.Text);
-    ChannelsInBlock{n} = str2double(TI{n}.ChannelsInBlock.Text);
-    Title{n} = TI{n}.Description.Name.Text;
-    SubTitle{n} = TI{n}.SubTitle.Text;
+    nChannel{n}    = str2double(TI{n}.NumberOfChannels.Text);
+    startIndex{n}  = str2double(TI{n}.AcquisitionChannel.Text);
+    TotChInFile{n} = str2double(TI{n}.TotalChannelsInFile.Text);
 
-    % EMG: title starts with "HD"
-    if strncmpi(Title{n}, 'HD', 2) || strncmpi(Title{n}, 'GR', 2)
+    % Title: <Title> element, fall back to Description.Name
+    if isfield(TI{n}, 'Title') && isfield(TI{n}.Title, 'Text')
+        Title{n} = TI{n}.Title.Text;
+    elseif isfield(TI{n}, 'Description') && isfield(TI{n}.Description, 'Name')
+        Title{n} = TI{n}.Description.Name.Text;
+    else
+        Title{n} = '';
+    end
+
+    % SampleSize (bytes per sample): default to 4 (int32) if not present
+    if isfield(TI{n}, 'SampleSize') && isfield(TI{n}.SampleSize, 'Text')
+        SampleSize{n} = str2double(TI{n}.SampleSize.Text);
+    else
+        SampleSize{n} = 4;
+    end
+
+    % IsControl
+    if isfield(TI{n}, 'IsControl') && isfield(TI{n}.IsControl, 'Text') && ...
+       strcmpi(TI{n}.IsControl.Text, 'true')
+        isControl(n) = true;
+    end
+
+    % IsQuaternion: check Title and Description.Name (matches Python's _track_is_quaternion)
+    descName = '';
+    if isfield(TI{n}, 'Description') && isfield(TI{n}.Description, 'Name') && ...
+       isfield(TI{n}.Description.Name, 'Text')
+        descName = TI{n}.Description.Name.Text;
+    end
+    if contains(Title{n}, 'Quaternion', 'IgnoreCase', true) || ...
+       contains(descName,  'Quaternion', 'IgnoreCase', true)
+        isQuaternion(n) = true;
+    end
+
+    % EMG: not control, not quaternion, adc_bits > 0
+    if ~isControl(n) && ~isQuaternion(n) && nADBit{n} > 0
         isEMG(n) = true;
-        signal.gridname{end+1} = Title{n};
-    end
-
-    % AUX: title starts with "AUX" or contains "Quaternions"
-    if strncmpi(Title{n}, 'AUX', 3) || strncmpi(SubTitle{n}, 'AUX', 3) || contains(Title{n}, 'Quaternions', 'IgnoreCase', true)
-        isAUX(n) = true;
+        % Extract grid name from Description.SensorType via regexp (e.g. "HD08MM1305")
+        gridLabel = extractGridName(TI{n});
+        if ~isempty(gridLabel)
+            signal.gridname{end+1} = gridLabel;
+        end
     end
 end
 
-if ~any(isEMG) && ~any(isAUX)
+if ~any(isEMG) && ~any(isQuaternion)
     rmdir('tmpopen', 's');
-    error('OpenOTB4:noData', 'No EMG or AUX tracks found in %s.', file);
+    error('OpenOTB4:noData', 'No EMG or Quaternion tracks found in %s.', file);
 end
 
-% Load signal data: read each .sig file once, then slice per track
-data    = [];
-emgRows = [];
-auxRows = [];
-r1      = 0;
+% Load signal data: group by sig file, read once per file, slice per track
+uniquePaths = unique(Path, 'stable');
 
-if strcmp(device, 'Novecento+')
-    % Each .sig file may hold multiple tracks; group and read once per file
-    uniquePaths = unique(Path, 'stable');
-    for f = 1:length(uniquePaths)
-        sigName  = uniquePaths{f};
-        idx      = find(strcmp(Path, sigName));
-        if ~any(isEMG(idx) | isAUX(idx)); continue; end
-        nChFile  = ChannelsInBlock{idx(1)};
+emg_blocks = cell(1, sum(isEMG));
+emgIdx     = 0;
+nQuatCh    = sum(cellfun(@(n,q) n*q, nChannel, num2cell(isQuaternion)));
+quat_data  = zeros(nQuatCh, 0);
+quatRow    = 0;
+fsamp      = [];
 
-        h   = fopen(fullfile('tmpopen', sigName), 'r');
-        raw = fread(h, [nChFile, Inf], 'int32');
-        fclose(h);
-        nSamples = size(raw, 2);
+for f = 1:length(uniquePaths)
+    sigName = uniquePaths{f};
+    idx     = find(strcmp(Path, sigName));
+    sigPath = fullfile('tmpopen', sigName);
+    if ~exist(sigPath, 'file'); continue; end
 
-        for k = idx
-            if ~(isEMG(k) || isAUX(k)); continue; end
-            block = raw(startIndex{k}+1 : startIndex{k}+nChannel{k}, :);
-            if nADBit{k} > 0
-                block = block * PowerSupply{k} / (2^nADBit{k}) * 1000 / Gains{k};
-            end
-            r0 = r1 + 1;  r1 = r1 + nChannel{k};
-            data(r0:r1, 1:nSamples) = block;
-            if isEMG(k)
-                emgRows = [emgRows, r0:r1];
-            elseif isAUX(k)
-                auxRows = [auxRows, r0:r1];
-            end
-        end
+    totCh = TotChInFile{idx(1)};
+    ss    = SampleSize{idx(1)};
+    if ss == 4
+        dtype = 'int32';
+    else
+        dtype = 'int16';
     end
-else
-    % Standard devices: single .sig file, int16, all tracks interleaved
-    sigFiles = dir(fullfile('tmpopen', '*.sig'));
-    if isempty(sigFiles)
-        error('OpenOTB4:noSigFile', 'No .sig file found in archive.');
-    end
-    TotCh = sum(cell2mat(nChannel));
 
-    h   = fopen(fullfile('tmpopen', sigFiles(1).name), 'r');
-    raw = fread(h, [TotCh, Inf], 'short');
+    h   = fopen(sigPath, 'r');
+    raw = fread(h, [totCh, Inf], dtype);
     fclose(h);
-    nSamples = size(raw, 2);
 
-    for n = 1:nTrack
-        if ~(isEMG(n) || isAUX(n)); continue; end
-        block = raw(startIndex{n}+1 : startIndex{n}+nChannel{n}, :);
-        if nADBit{n} > 0
-            block = block * PowerSupply{n} / (2^nADBit{n}) * 1000 / Gains{n};
-        end
-        r0 = r1 + 1;  r1 = r1 + nChannel{n};
-        data(r0:r1, 1:nSamples) = block;
-        if isEMG(n)
-            emgRows = [emgRows, r0:r1];
-        elseif isAUX(n)
-            auxRows = [auxRows, r0:r1];
+    for k = idx
+        acqCh = startIndex{k};          % 0-based index from XML
+        nCh   = nChannel{k};
+        block = double(raw(acqCh+1 : acqCh+nCh, :));
+
+        if isQuaternion(k)
+            % Quaternions stored as int32 scaled by 32768 -> normalize to [-1, 1]
+            block = block / 32768.0;
+            nS    = size(block, 2);
+            if size(quat_data, 2) < nS
+                quat_data(:, end+1:nS) = 0;
+            end
+            quat_data(quatRow+1 : quatRow+nCh, 1:nS) = block;
+            quatRow = quatRow + nCh;
+
+        elseif isEMG(k) && nADBit{k} > 0
+            % EMG: apply physical scaling
+            block  = block * PowerSupply{k} / (2^nADBit{k}) * 1000 / Gains{k};
+            emgIdx = emgIdx + 1;
+            emg_blocks{emgIdx} = block;
+            if isempty(fsamp)
+                fsamp = Fsample{k};
+            end
         end
     end
 end
 
-signal.data = data(emgRows, :);
-if ~isempty(auxRows)
-    signal.auxiliary = data(auxRows, :);
+if emgIdx == 0
+    rmdir('tmpopen', 's');
+    error('OpenOTB4:noEMG', 'No EMG signal blocks found in %s.', file);
 end
+emg_blocks = emg_blocks(1:emgIdx);
 
-% Sampling rate from first EMG track; fall back to track 1
-emgTrack = find(isEMG, 1);
-if ~isempty(emgTrack)
-    signal.fsamp = Fsample{emgTrack};
-else
-    signal.fsamp = Fsample{1};
-end
+% Truncate all blocks to minimum length and concatenate
+minLen     = min(cellfun(@(b) size(b,2), emg_blocks));
+signal.data = cell2mat(cellfun(@(b) b(:,1:minLen), emg_blocks, 'UniformOutput', false)');
 
-signal.nChan = size(signal.data, 1);
-signal.ngrid = length(signal.gridname);
-
-if isfield(signal, 'auxiliary')
-    for i = 1:signal.ngrid*4
+if quatRow > 0
+    signal.auxiliary = quat_data(1:quatRow, 1:minLen);
+    for i = 1:size(signal.auxiliary, 1)
         signal.auxiliaryname{i} = 'Quaternions';
     end
-    auxn=1;
-    for j = i+1:size(signal.auxiliary,1)
-        signal.auxiliaryname{j} = ['AUX' num2str(auxn)];
-        auxn = auxn + 1;
-    end
 end
+
+% Sampling rate
+if isempty(fsamp)
+    fsamp = Fsample{1};
+end
+signal.fsamp = fsamp;
+signal.nChan = size(signal.data, 1);
+signal.ngrid = length(signal.gridname);
 
 dlgbox = [];
 % Clean Folder
 rmdir('tmpopen','s');
 
+end
+
+% -------------------------------------------------------------------------
+function gridName = extractGridName(track)
+% Extract grid model name (e.g. "HD08MM1305") from OTB4 track XML struct.
+% Mirrors inferGridNameFromSensorType in openOTB4N.m.
+%
+% Priority:
+%  1. Description.SensorType  — contains verbose string with model embedded
+%  2. StringsDescriptions.OriginalSensor
+%  3. Description.Name        — often "Unknown", used as last resort
+%  4. AdapterModel            — StringsDescriptions.OriginalAdapter fallback
+
+    gridName = '';
+    pattern = '(HD\d{2}MM\d{4}|GR\d{2}MM\d{4}|ELSCH\d+NM\d+|MYOMRF-\d+X\d+|MYOMNP-\d+X\d+)';
+
+    % 1. Description.SensorType
+    if isfield(track, 'Description') && isfield(track.Description, 'SensorType')
+        st = track.Description.SensorType;
+        if isfield(st, 'Text'), st = st.Text; end
+        if ischar(st)
+            tok = regexp(upper(st), pattern, 'match', 'once');
+            if ~isempty(tok); gridName = tok; return; end
+        end
+    end
+
+    % 2. StringsDescriptions.OriginalSensor
+    if isfield(track, 'StringsDescriptions') && isfield(track.StringsDescriptions, 'OriginalSensor')
+        os = track.StringsDescriptions.OriginalSensor;
+        if isfield(os, 'Text'), os = os.Text; end
+        if ischar(os)
+            tok = regexp(upper(os), pattern, 'match', 'once');
+            if ~isempty(tok); gridName = tok; return; end
+        end
+    end
+
+    % 3. Description.Name (usually "Unknown", but try anyway)
+    if isfield(track, 'Description') && isfield(track.Description, 'Name')
+        dn = track.Description.Name;
+        if isfield(dn, 'Text'), dn = dn.Text; end
+        if ischar(dn)
+            tok = regexp(upper(dn), pattern, 'match', 'once');
+            if ~isempty(tok); gridName = tok; return; end
+        end
+    end
+
+    % 4. StringsDescriptions.OriginalAdapter (e.g. "BIO64HD" → "HD08MM1305")
+    if isfield(track, 'StringsDescriptions') && isfield(track.StringsDescriptions, 'OriginalAdapter')
+        oa = track.StringsDescriptions.OriginalAdapter;
+        if isfield(oa, 'Text'), oa = oa.Text; end
+        if ischar(oa) && contains(upper(oa), 'BIO64HD')
+            gridName = 'HD08MM1305';
+        end
+    end
 end

@@ -43,6 +43,7 @@ classdef MUedit_exported < matlab.apps.AppBase
         UIAxes_Decomp_2                matlab.ui.control.UIAxes
         UIAxes_Decomp_1                matlab.ui.control.UIAxes
         Panel_4                        matlab.ui.container.Panel
+        PlotMUAPButton                 matlab.ui.control.Button
         SILCheckBox                    matlab.ui.control.CheckBox
         CheckBox                       matlab.ui.control.CheckBox
         ReferenceDropDown_2            matlab.ui.control.DropDown
@@ -92,7 +93,7 @@ classdef MUedit_exported < matlab.apps.AppBase
         pathname            % Folder where decomposed data will be saved
 
         filename2           % File to edit
-        pathname2            % Folder where edited data will be saved
+        pathname2           % Folder where edited data will be saved
 
         MUdecomp            % Data for MU decomposition
         Configuration       % Object for recording configuration
@@ -104,6 +105,7 @@ classdef MUedit_exported < matlab.apps.AppBase
         graphend            % last time point of the graph for edition
         roi                 % Region of interest for edition
                 
+        scrollMode = 'zoom' % Scroll wheel mode: 'zoom' | 'pan'
     end
     
     properties (Access = public)
@@ -175,6 +177,14 @@ classdef MUedit_exported < matlab.apps.AppBase
                     movegui(app.MUdecomp.config.UIFigure, 'center')
                     app.SetconfigurationButton.Enable = 'on';
                 end
+            elseif isequal(C{end}, 'npz')
+                answer = inputdlg( ...
+                    'Grid type per probe (space-separated, e.g. HD08MM1305 HD08MM1305 HD08MM1305):', ...
+                    'NPZ - Grid configuration', 1, {'HD08MM1305 HD08MM1305 HD08MM1305'});
+                if isempty(answer), return; end
+                gridnames = strsplit(strtrim(answer{1}));
+                signal = loadNPZ([app.pathname app.filename], gridnames, 0);
+                app.SetconfigurationButton.Enable = 'off';
             end
             app.ReferenceDropDown.Items = {};
             
@@ -602,11 +612,13 @@ classdef MUedit_exported < matlab.apps.AppBase
             end
 
             % Update the list of references with Auxiliary data
-            app.ReferenceDropDown_2.Items = {};
             if isfield(files.signal, 'auxiliary')
-                app.ReferenceDropDown_2.Items = files.signal.auxiliaryname;
+                app.ReferenceDropDown_2.Items = cat(2, {'EMG amplitude'}, files.signal.auxiliaryname);
                 app.ReferenceDropDown_2.Value = files.signal.auxiliaryname{1};
                 files.signal.target = files.signal.auxiliary(1,:);
+            else
+                app.ReferenceDropDown_2.Items = {'EMG amplitude'};
+                app.ReferenceDropDown_2.Value = 'EMG amplitude';
             end
             
             % Display the first MU
@@ -1849,6 +1861,26 @@ classdef MUedit_exported < matlab.apps.AppBase
                     LockspikesButtonPushed(app);
                 case 'e'
                     ExtendMUfilterPushed(app);
+                case 'b'
+                    % PreviousMUButtonPushed(app)
+                    items = app.MUdisplayedDropDown.Items;
+                    idx = find(strcmp(items, app.MUdisplayedDropDown.Value));
+                    if ~isempty(idx) && idx > 1
+                        app.MUdisplayedDropDown.Value = items{idx - 1};
+                        MUdisplayedDropDownValueChanged(app, []);
+                    end
+                case 'n'
+                    % NextMUButtonPushed(app);
+                    items = app.MUdisplayedDropDown.Items;
+                    idx = find(strcmp(items, app.MUdisplayedDropDown.Value));
+                    if ~isempty(idx) && idx < length(items)
+                        app.MUdisplayedDropDown.Value = items{idx + 1};
+                        MUdisplayedDropDownValueChanged(app, []);
+                    end
+                case 'z'
+                    app.scrollMode = 'zoom';
+                case 'm'
+                    app.scrollMode = 'pan';
             end
 
         end
@@ -1859,6 +1891,54 @@ classdef MUedit_exported < matlab.apps.AppBase
                 app.Backup.peeloff = 1;
             else
                 app.Backup.peeloff = 0;
+            end
+        end
+
+        % Button pushed function: PlotMUAPButton
+        function PlotMUAPButtonPushed(app, event)
+            C = strsplit(app.MUdisplayedDropDown.Value, '_');
+            if length(C) < 4, return; end
+            selArray = str2double(C{2});
+            selMU    = str2double(C{4});
+
+            sig = app.MUedition.signal;
+            edt = app.MUedition.edition;
+
+            gridData = sig.data(edt.arraynb == selArray, :);
+            mask     = sig.EMGmask{selArray};
+            coords   = sig.coordinates{selArray};
+
+            if isfield(edt, 'Dischargetimes') && selArray <= size(edt.Dischargetimes,1) && ...
+                    selMU <= size(edt.Dischargetimes,2)
+                dt = edt.Dischargetimes{selArray, selMU};
+            else
+                dt = sig.Dischargetimes{selArray, selMU};
+            end
+
+            silval = NaN;
+            if isfield(edt, 'silval') && selArray <= size(edt.silval,1) && ...
+                    selMU <= size(edt.silval,2) && ~isempty(edt.silval{selArray, selMU})
+                silval = edt.silval{selArray, selMU};
+            end
+
+            plotMUAP(sig.fsamp, gridData, mask, coords, dt, silval, selArray, selMU);
+        end
+
+        % Window scroll wheel function: UIFigure
+        function UIFigureWindowScrollWheel(app, event)
+            switch app.scrollMode
+                case 'zoom'
+                    if event.VerticalScrollCount > 0
+                        ZoomoutButtonPushed(app);
+                    else
+                        ZoominButtonPushed(app);
+                    end
+                case 'pan'
+                    if event.VerticalScrollCount > 0
+                        ScrollrightButtonPushed(app);
+                    else
+                        ScrollleftButtonPushed(app);
+                    end
             end
         end
     end
@@ -1874,11 +1954,13 @@ classdef MUedit_exported < matlab.apps.AppBase
             app.UIFigure.Color = [0.149 0.149 0.149];
             app.UIFigure.Position = [1 100 1500 850];
             app.UIFigure.Name = 'MATLAB App';
+            app.UIFigure.WindowScrollWheelFcn = createCallbackFcn(app, @UIFigureWindowScrollWheel, true);
             app.UIFigure.KeyPressFcn = createCallbackFcn(app, @UIFigureKeyPress, true);
 
             % Create Panel_3
             app.Panel_3 = uipanel(app.UIFigure);
             app.Panel_3.ForegroundColor = [0.9412 0.9412 0.9412];
+            app.Panel_3.Visible = 'off';
             app.Panel_3.BackgroundColor = [0.149 0.149 0.149];
             app.Panel_3.FontName = 'Poppins';
             app.Panel_3.FontWeight = 'bold';
@@ -2102,6 +2184,7 @@ classdef MUedit_exported < matlab.apps.AppBase
             % Create Panel_4
             app.Panel_4 = uipanel(app.UIFigure);
             app.Panel_4.ForegroundColor = [0.9412 0.9412 0.9412];
+            app.Panel_4.Visible = 'off';
             app.Panel_4.BackgroundColor = [0.149 0.149 0.149];
             app.Panel_4.FontName = 'Poppins';
             app.Panel_4.FontWeight = 'bold';
@@ -2186,7 +2269,7 @@ classdef MUedit_exported < matlab.apps.AppBase
             app.SaveButton.FontName = 'Poppins';
             app.SaveButton.FontSize = 18;
             app.SaveButton.FontColor = [0.9412 0.9412 0.9412];
-            app.SaveButton.Position = [15 49 369 45];
+            app.SaveButton.Position = [15 15 369 45];
             app.SaveButton.Text = 'Save';
 
             % Create BatchprocessingLabel
@@ -2206,7 +2289,7 @@ classdef MUedit_exported < matlab.apps.AppBase
             app.VisualisationLabel.FontSize = 18;
             app.VisualisationLabel.FontWeight = 'bold';
             app.VisualisationLabel.FontColor = [0.9412 0.9412 0.9412];
-            app.VisualisationLabel.Position = [137 329 127 23];
+            app.VisualisationLabel.Position = [137 333 127 23];
             app.VisualisationLabel.Text = 'Visualisation';
 
             % Create SavetheeditionLabel
@@ -2217,7 +2300,7 @@ classdef MUedit_exported < matlab.apps.AppBase
             app.SavetheeditionLabel.FontSize = 18;
             app.SavetheeditionLabel.FontWeight = 'bold';
             app.SavetheeditionLabel.FontColor = [0.9412 0.9412 0.9412];
-            app.SavetheeditionLabel.Position = [101 109 199 23];
+            app.SavetheeditionLabel.Position = [101 70 199 23];
             app.SavetheeditionLabel.Text = 'Save the edition';
 
             % Create PlotMUfiringratesButton
@@ -2264,6 +2347,7 @@ classdef MUedit_exported < matlab.apps.AppBase
             % Create ReferenceDropDown_2
             app.ReferenceDropDown_2 = uidropdown(app.Panel_4);
             app.ReferenceDropDown_2.Items = {'Target', 'Force', 'EMG amplitude', 'All'};
+            app.ReferenceDropDown_2.Editable = 'on';
             app.ReferenceDropDown_2.ValueChangedFcn = createCallbackFcn(app, @ReferenceDropDown_2ValueChanged, true);
             app.ReferenceDropDown_2.FontName = 'Poppins';
             app.ReferenceDropDown_2.FontSize = 18;
@@ -2284,6 +2368,16 @@ classdef MUedit_exported < matlab.apps.AppBase
             app.SILCheckBox.FontSize = 18;
             app.SILCheckBox.FontColor = [0.3804 0.7804 0.749];
             app.SILCheckBox.Position = [315 276 56 45];
+
+            % Create PlotMUAPButton
+            app.PlotMUAPButton = uibutton(app.Panel_4, 'push');
+            app.PlotMUAPButton.ButtonPushedFcn = createCallbackFcn(app, @PlotMUAPButtonPushed, true);
+            app.PlotMUAPButton.BackgroundColor = [0.149 0.149 0.149];
+            app.PlotMUAPButton.FontName = 'Poppins';
+            app.PlotMUAPButton.FontSize = 18;
+            app.PlotMUAPButton.FontColor = [0.3804 0.7804 0.749];
+            app.PlotMUAPButton.Position = [15 108 369 45];
+            app.PlotMUAPButton.Text = 'Plot MUAP';
 
             % Create Panel_2
             app.Panel_2 = uipanel(app.UIFigure);

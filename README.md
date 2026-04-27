@@ -26,14 +26,18 @@ If you use MUedit in your experimental setting, please cite the following paper:
 
 ## Support
 
-The Matlab version of MUedit is mainly maintained by Paul Kaufmann ([@pauk98](https://github.com/pauk98)) and Simon Avrillon.
+The Matlab version of MUedit is mainly maintained by Paul Kaufmann ([@pauk98](https://github.com/pauk98)), Giovanni Traetta ([@innavoig23](https://github.com/innavoig23)), and Simon Avrillon.
 
 For technical assistance and support, please contact:
 
-Paul Kaufmann  
-PhD student, University Côte d'Azur  
+Paul Kaufmann
+PhD student, University Côte d'Azur
 E-mail: paul.kaufmann@etu.univ-cotedazur.fr
 
-Simon Avrillon  
-Research fellow, Nantes University  
+Giovanni Traetta
+PhD student, Nantes University
+E-mail: giovanni.traetta@etu.univ-nantes.fr
+
+Simon Avrillon
+Research fellow, Nantes University
 E-mail: simon.avrillon@univ-nantes.fr

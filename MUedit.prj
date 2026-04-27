@@ -1,5 +1,5 @@
 <deployment-project plugin="plugin.apptool" plugin-version="1.0">
-  <configuration build-checksum="3362591159" file="/Users/savrillo/Dev/MUedit/MUedit.prj" location="/Users/savrillo/Dev/MUedit" name="MUedit" target="target.mlapps" target-name="Package App">
+  <configuration build-checksum="1513213391" file="/Users/giova/Desktop/MUeditORIGINAL_edited_MUAPs/MUedit.prj" location="/Users/giova/Desktop/MUeditORIGINAL_edited_MUAPs" name="MUedit" target="target.mlapps" target-name="Package App">
     <param.appname>MUedit</param.appname>
     <param.authnamewatermark />
     <param.email />
@@ -12,7 +12,7 @@
     </param.icons>
     <param.summary>App to decompose electromyographic signals and manually edit motor unit pulse trains.</param.summary>
     <param.description />
-    <param.screenshot>/private/var/folders/3w/f0qnm9h56gd5nbwm941rp9l40000gp/T/tpf5367f1e_d2df_4883_9909_2c91e535f39d.png</param.screenshot>
+    <param.screenshot>/private/var/folders/cn/qhnp_h_12s7bl4hl3djxsl4w0000gn/T/tp4fa8022a_5860_42c7_81d1_534c64dbfb58.png</param.screenshot>
     <param.version>1.2</param.version>
     <param.products.name>
       <item>MATLAB</item>
@@ -27,10 +27,10 @@
       <item>19</item>
     </param.products.id>
     <param.products.version>
-      <item>24.2</item>
-      <item>24.2</item>
-      <item>24.2</item>
-      <item>24.2</item>
+      <item>23.2</item>
+      <item>23.2</item>
+      <item>23.2</item>
+      <item>23.2</item>
     </param.products.version>
     <param.platforms />
     <param.output>${PROJECT_ROOT}</param.output>
@@ -46,72 +46,21 @@
     <fileset.main>
       <file>${PROJECT_ROOT}/MUedit.mlapp</file>
     </fileset.main>
-    <fileset.depfun>
-      <file>${PROJECT_ROOT}/lib/Intandlg.m</file>
-      <file>${PROJECT_ROOT}/lib/OEphysdlg.m</file>
-      <file>${PROJECT_ROOT}/lib/OpenOTB4.m</file>
-      <file>${PROJECT_ROOT}/lib/Quattrodlg.m</file>
-      <file>${PROJECT_ROOT}/lib/bandpassingals.m</file>
-      <file>${PROJECT_ROOT}/lib/batchprocessfilters.m</file>
-      <file>${PROJECT_ROOT}/lib/calcSIL.m</file>
-      <file>${PROJECT_ROOT}/lib/cutMUAP.m</file>
-      <file>${PROJECT_ROOT}/lib/demean.m</file>
-      <file>${PROJECT_ROOT}/lib/extend.m</file>
-      <file>${PROJECT_ROOT}/lib/extendfilter.m</file>
-      <file>${PROJECT_ROOT}/lib/fixedpointalg.m</file>
-      <file>${PROJECT_ROOT}/lib/formatsignalHDEMG.m</file>
-      <file>${PROJECT_ROOT}/lib/getsil.m</file>
-      <file>${PROJECT_ROOT}/lib/getspikes.m</file>
-      <file>${PROJECT_ROOT}/lib/minimizeCOVISI.m</file>
-      <file>${PROJECT_ROOT}/lib/notchsignals.m</file>
-      <file>${PROJECT_ROOT}/lib/openIntan.m</file>
-      <file>${PROJECT_ROOT}/lib/openOEphys.m</file>
-      <file>${PROJECT_ROOT}/lib/openOTBplus.m</file>
-      <file>${PROJECT_ROOT}/lib/pcaesig.m</file>
-      <file>${PROJECT_ROOT}/lib/peeloff.m</file>
-      <file>${PROJECT_ROOT}/lib/readNPY.m</file>
-      <file>${PROJECT_ROOT}/lib/readNPYheader.m</file>
-      <file>${PROJECT_ROOT}/lib/readXMLotb.m</file>
-      <file>${PROJECT_ROOT}/lib/read_Intan_RHD_MUedit.m</file>
-      <file>${PROJECT_ROOT}/lib/refineMUs.m</file>
-      <file>${PROJECT_ROOT}/lib/refinesil.m</file>
-      <file>${PROJECT_ROOT}/lib/remduplicates.m</file>
-      <file>${PROJECT_ROOT}/lib/remduplicatesbgrids.m</file>
-      <file>${PROJECT_ROOT}/lib/remoutliers.m</file>
-      <file>${PROJECT_ROOT}/lib/segmentsession.m</file>
-      <file>${PROJECT_ROOT}/lib/segmenttargets.m</file>
-      <file>${PROJECT_ROOT}/lib/whiteesig.m</file>
-      <file>${PROJECT_ROOT}/lib/xml2struct.m</file>
-    </fileset.depfun>
-    <fileset.resources />
+    <fileset.depfun />
+    <fileset.resources>
+      <file>${PROJECT_ROOT}/MUedit_resources</file>
+      <file>${PROJECT_ROOT}/lib</file>
+    </fileset.resources>
     <fileset.package />
     <build-deliverables>
-      <file location="/Users/savrillo/Dev" name="MUedit" optional="false">/Users/savrillo/Dev/MUedit</file>
+      <file location="/Users/giova/Desktop" name="MUeditORIGINAL_edited_MUAPs" optional="false">/Users/giova/Desktop/MUeditORIGINAL_edited_MUAPs</file>
     </build-deliverables>
     <workflow />
     <matlab>
-      <root>/Applications/MATLAB_R2024b.app</root>
+      <root>/Applications/MATLAB_R2023b.app</root>
       <toolboxes>
-        <toolbox name="matlabcoder" />
-        <toolbox name="fixedpoint" />
-        <toolbox name="matlabhdlcoder" />
         <toolbox name="neuralnetwork" />
       </toolboxes>
-      <toolbox>
-        <matlabcoder>
-          <enabled>true</enabled>
-        </matlabcoder>
-      </toolbox>
-      <toolbox>
-        <fixedpoint>
-          <enabled>true</enabled>
-        </fixedpoint>
-      </toolbox>
-      <toolbox>
-        <matlabhdlcoder>
-          <enabled>true</enabled>
-        </matlabhdlcoder>
-      </toolbox>
       <toolbox>
         <neuralnetwork>
           <enabled>true</enabled>
@@ -127,7 +76,7 @@
       <vista>false</vista>
       <linux>false</linux>
       <solaris>false</solaris>
-      <osver>15.7.5</osver>
+      <osver>26.4.1</osver>
       <os32>true</os32>
       <os64>false</os64>
       <arch>maci64</arch>

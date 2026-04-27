@@ -2,7 +2,8 @@
 % To get the 2d coordinates of EMG channels over the grid
 % To check the EMG signals (automatic or visual)
 %
-% Input: 
+% Input: /Users/giova/Library/CloudStorage/OneDrive-Personale/GitHub/MUedit/lib/OpenOTB4.m
+
 % signal: row-wise signal
 % gridname: name of the OTB grid of electrodes
 % fsamp: sampling frequency of the signal
@@ -212,47 +213,69 @@ for i = 1:length(gridname)
     signal = notchsignals(signal,fsamp);
     signal = bandpassingals(signal, fsamp, emgtype(i));
     
-    % Visual checking of EMG signals by column
+    % Visual checking of EMG signals
     if checkEMG == 1
-        t = (0 : size(signal, 2) - 1) / fsamp;
-        ch1 = 1;
-        for c = 1:size(ElChannelMap,2)
-            figure;
-            lincol = colormap(turbo(size(ElChannelMap,1)));
-            for r = 1:size(ElChannelMap,1)
-                if ch1 < length(discardChannelsVec{i}) + 1
-                    if max(signal(ch,:)) > 0
-                        plot(t, signal(ch,:)/max(signal(ch,:)) + r, 'Color', lincol(r,:), 'LineWidth', 1)
-                    else
-                        plot(t, zeros(1,size(signal,2)) + r, 'Color', lincol(r,:), 'LineWidth', 1)
-                    end
-                    grid on
-                    hold on
-                    xlim([t(1) t(end)]);
-                    ylim([0 size(ElChannelMap,1)+1])
-                    ch = ch+1;
-                    ch1 = ch1 + 1;
+        % Notch filter and bandpassfilter before visualization
+        signal = notchsignals(signal,fsamp);
+        signal = bandpassingals(signal,fsamp,emgtype(i));
+
+        % Elements needed for plot
+        lincol = colormap(turbo(size(ElChannelMap,1)));
+        [nRows, nCols] = size(ElChannelMap);
+        nChannels = max(ElChannelMap(:));
+        L = size(signal, 2);
+        t = (0:L-1) / fsamp;
+
+        % Create figure
+        fig = figure;
+        tl = tiledlayout(fig, 1, nCols, 'TileSpacing', 'compact', 'Padding','compact');
+        % Plot
+        ax = gobjects(1, nCols);
+        for c = 1:nCols
+            ax(c) = nexttile(tl);
+            hold(ax(c), 'on')
+            for r = 1:nRows
+                ch_lin_grid = ElChannelMap(r,c); % channel number in the grid
+                ch_lin_matrix = (i-1)*nChannels + ch_lin_grid; % channel number in the global data matrix
+                if max(signal(ch_lin_matrix,:)) > 0
+                    sig_to_plot = signal(ch_lin_matrix,:) / max(signal(ch_lin_matrix,:)) + 2*r; % retrieve sig to plot (normalized signal + offset)
+                else
+                    sig_to_plot = zeros(1, size(signal,2)) + 2*r;
                 end
+                    % Plot
+                plot(ax(c), t, sig_to_plot, 'Color', lincol(r,:), 'LineWidth', 1)
             end
-            title(['Column#' num2str(c)], 'Color', [0.9412 0.9412 0.9412], 'FontName', 'Avenir Next', 'FontSize', 20)
-            xlabel('Time (s)', 'FontName', 'Avenir Next', 'FontSize', 20)
-            ylabel('Row #', 'FontName', 'Avenir Next', 'FontSize', 20)
-            set(gcf,'Color', [0.5 0.5 0.5]);
-            set(gcf,'units','normalized','outerposition',[0 0 1 1])
-            set(gca,'Color', [0.5 0.5 0.5], 'XColor', [0.9412 0.9412 0.9412], 'YColor', [0.9412 0.9412 0.9412]);
-            discchan = inputdlg('Enter the number of discarded channels (Enter space-separated numbers):');
+            % ylim(ax(c), [0 nRows+1])
+            % yticks(ax(c), 1:nRows)
+            ylim(ax(c), [0 2*nRows+1])
+            yticks(ax(c), 2:2:nRows*2)
+            yticklabels(ax(c), string(ElChannelMap(:,c)))
+
+            title(ax(c), sprintf('Column #%d', c), 'FontName', 'Avenir Next', 'FontSize', 20)
             
-            if ~isnan(str2num(discchan{1}))
-                discardChannelsVec{i}(str2num(discchan{1}) + (c-1)*size(ElChannelMap,1)) = 1;
-            end
-            close;
+            grid(ax(c), 'on')
+            hold(ax(c), 'off')
         end
-        if length(discardChannelsVec{i}) > nbelectrodes
-            discardChannelsVec{i} = discardChannelsVec{i}(1:nbelectrodes);
-        end
+        linkaxes(ax, 'x')
+
+
+        % Set figure
+        title(tl, ['Grid #' num2str(i)], 'Color', [0.9412 0.9412 0.9412], 'FontName', 'Avenir Next', 'FontSize', 20)
+        xlabel(tl, 'Time (s)', 'FontName', 'Avenir Next', 'FontSize', 20)
+        ylabel(tl, 'Linear Channel Index', 'FontName', 'Avenir Next', 'FontSize', 20)
+        set(fig,'Color', [0.5 0.5 0.5]);
+        % set(fig,'units','normalized','outerposition',[0 0 1 1])
+        fig.WindowState = 'maximized';
+        set(ax,'Color', [0.5 0.5 0.5], 'XColor', [0.9412 0.9412 0.9412], 'YColor', [0.9412 0.9412 0.9412]);
+
+        % Store bad channels
+        discchan = inputdlg('Enter the number of channels to discard (enter space-separated numbers):');
+        discchan = str2num(discchan{1});
+        discardChannelsVec{i}(discchan) = 1;
+        close;
     else
         discardChannelsVec{i} = zeros(nbelectrodes,1);
-    end  
+    end
 end
 end
 
@@ -267,4 +290,6 @@ end
 2026-04-07 / H. Haffad
     Fix x-axis displaying sample indices instead of time in seconds.
     Fix division by zero on dead channels (max <= 0).
+2026-04-24 / G. Traetta
+    Changed cheking EMG from single column to multiple columns.
 %}
